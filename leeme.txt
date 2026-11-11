@@ -1,3 +1,162 @@
+# Guía rápida de comandos — Django y Git
+
+## 1. Entorno virtual
+
+| Comando | ¿Para qué sirve? |
+|---|---|
+| `py -m venv venv` | Crear entorno virtual |
+| `.\venv\Scripts\Activate.ps1` | Activar entorno en PowerShell |
+| `deactivate` | Desactivar entorno |
+| `pip install -r requirements.txt` | Instalar dependencias |
+| `pip freeze > requirements.txt` | Guardar dependencias instaladas |
+
+## 2. Django
+
+| Comando | ¿Para qué sirve? |
+|---|---|
+| `django-admin startproject config .` | Crear un proyecto Django |
+| `python manage.py startapp nombre` | Crear una aplicación |
+| `python manage.py runserver` | Iniciar servidor |
+| `python manage.py runserver 8080` | Iniciar en otro puerto |
+| `python manage.py check` | Comprobar la configuración |
+| `python manage.py createsuperuser` | Crear administrador |
+| `python manage.py changepassword usuario` | Cambiar contraseña |
+| `python manage.py shell` | Abrir consola de Django |
+| `python manage.py test` | Ejecutar pruebas |
+
+## 3. Base de datos
+
+| Comando | ¿Para qué sirve? |
+|---|---|
+| `python manage.py makemigrations` | Generar migraciones de los modelos |
+| `python manage.py makemigrations clientes` | Generar migraciones de clientes |
+| `python manage.py migrate` | Aplicar migraciones |
+| `python manage.py showmigrations` | Consultar migraciones |
+| `python manage.py sqlmigrate clientes 0001` | Mostrar el SQL de una migración existente |
+
+**Orden habitual después de modificar `models.py`:**
+
+```powershell
+python manage.py makemigrations
+python manage.py migrate
+```
+
+## 4. Git y GitHub
+
+| Comando | ¿Para qué sirve? |
+|---|---|
+| `git clone URL` | Clonar repositorio |
+| `git init` | Inicializar Git |
+| `git status` | Ver cambios pendientes |
+| `git add .` | Preparar todos los cambios |
+| `git add archivo` | Preparar un archivo específico |
+| `git commit -m "mensaje"` | Registrar cambios |
+| `git push` | Subir commits a GitHub |
+| `git pull` | Descargar e integrar cambios |
+| `git branch` | Ver ramas locales |
+| `git branch -a` | Ver ramas locales y remotas |
+| `git switch nombre` | Cambiar de rama |
+| `git switch -c nombre` | Crear y cambiar de rama |
+| `git merge nombre` | Integrar otra rama |
+| `git log --oneline` | Consultar historial |
+| `git diff` | Ver cambios no preparados |
+| `git remote -v` | Ver repositorios remotos |
+
+## 5. Ramas de nuestro equipo
+
+**Interfaz:**
+
+```powershell
+git switch -c desarrollo/interfaz
+git push -u origin desarrollo/interfaz
+```
+
+**Base de datos:**
+
+```powershell
+git switch -c desarrollo/base-datos
+git push -u origin desarrollo/base-datos
+```
+
+**Funcionalidades:**
+
+```powershell
+git switch -c desarrollo/funcionalidades
+git push -u origin desarrollo/funcionalidades
+```
+
+*Cada rama se crea una sola vez. Cada integrante utiliza únicamente la suya.*
+
+## 6. Rutina diaria
+
+**Antes de programar:**
+
+```powershell
+git status
+git pull
+```
+
+**Después de programar:**
+
+```powershell
+python manage.py check
+python manage.py test
+git add .
+git commit -m "feat: avance del proyecto"
+git push
+```
+
+## 7. Instalación desde cero para compañeros
+
+```powershell
+git clone https://github.com/FAy08024/charcuteria.git
+cd charcuteria
+py -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+## 8. Comandos adicionales
+
+| Comando | ¿Para qué sirve? |
+|---|---|
+| `pip install Pillow` | Soporte para imágenes |
+| `pip install django-jazzmin` | Instalar tema para Django Admin |
+| `python manage.py collectstatic` | Recopilar archivos estáticos para despliegue |
+| `python manage.py check --deploy` | Comprobar aspectos de despliegue |
+| `git rm --cached db.sqlite3` | Dejar de rastrear la BD local sin borrarla |
+| `git restore archivo` | Descartar cambios locales no preparados de un archivo |
+| `Ctrl + C` | Detener el servidor |
+
+**Nota:** `git restore` descarta modificaciones locales; úsalo únicamente cuando estés seguro.
+
+---
+
+**Proyecto:** Sistema de Gestión para Charcutería  
+**Repositorio:** https://github.com/FAy08024/charcuteria
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 git branch
 --- subir versiones
 git switch main
