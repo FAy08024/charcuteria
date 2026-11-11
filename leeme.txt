@@ -1,0 +1,224 @@
+git branch
+--- subir versiones
+git switch main
+git pull origin main
+
+# Crear rama nueva
+git switch -c desarrollo/v0.3.0
+
+# Trabajar y guardar
+git add .
+git commit -m "feat: implementar integrales dobles"
+git push -u origin desarrollo/v0.3.0
+
+# Después de comprobar que funciona
+git switch main
+git pull origin main
+git merge desarrollo/v0.3.0
+git push origin main
+
+# Marcar la versión terminada
+git tag -a v0.3.0 -m "Version 0.3.0 - Integrales dobles"
+git push origin v0.3.0
+  
+
+# COMANDOS DEL PROYECTO DJANGO
+# OVA - INTEGRALES DOBLES Y TRIPLES
+
+========================================
+1. ENTORNO VIRTUAL
+========================================
+
+python -m venv venv
+→ Crea un entorno virtual llamado venv.
+
+.\venv\Scripts\Activate.ps1
+→ Activa el entorno virtual en PowerShell.
+
+venv\Scripts\activate.bat
+→ Activa el entorno virtual en CMD.
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+→ Permite temporalmente ejecutar scripts en PowerShell.
+
+deactivate
+→ Desactiva el entorno virtual.
+
+========================================
+2. INSTALACIÓN DE LIBRERÍAS
+========================================
+
+pip install django sympy numpy scipy
+→ Instala Django y las librerías matemáticas.
+
+pip install -r requirements.txt
+→ Instala las dependencias guardadas del proyecto.
+
+pip freeze > requirements.txt
+→ Guarda las dependencias instaladas y sus versiones.
+
+========================================
+3. PROYECTO DJANGO
+========================================
+
+django-admin startproject config .
+→ Crea el proyecto Django en la carpeta actual.
+
+python manage.py startapp integrales
+→ Crea la aplicación encargada de las integrales.
+
+python manage.py startapp visualizador
+→ Crea la aplicación del simulador gráfico.
+
+python manage.py startapp lecciones
+→ Crea la aplicación de contenido educativo.
+
+python manage.py startapp evaluacion
+→ Crea la aplicación de evaluaciones.
+
+python manage.py runserver
+→ Inicia el servidor local de Django.
+
+http://127.0.0.1:8000/
+→ Dirección para acceder al proyecto desde el navegador.
+
+========================================
+4. BASE DE DATOS
+========================================
+
+python manage.py makemigrations
+→ Genera migraciones después de modificar los modelos.
+
+python manage.py migrate
+→ Aplica las migraciones a la base de datos.
+
+python manage.py createsuperuser
+→ Crea un usuario administrador.
+
+http://127.0.0.1:8000/admin/
+→ Permite acceder al panel administrativo de Django.
+
+========================================
+5. GIT Y GITHUB
+========================================
+
+git --version
+→ Muestra la versión instalada de Git.
+
+git init
+→ Inicializa un repositorio Git local.
+
+git status
+→ Muestra los archivos modificados, nuevos o pendientes.
+
+git add .
+→ Prepara los cambios para guardarlos.
+
+git commit -m "Descripción del cambio"
+→ Guarda una versión de los archivos en Git.
+
+git log --oneline
+→ Muestra el historial resumido de commits.
+
+git branch -M main
+→ Renombra la rama actual a main.
+
+git remote add origin https://github.com/FAy08024/ova-integrales.git
+→ Conecta el repositorio local con GitHub.
+
+git push -u origin main
+→ Sube la rama main a GitHub por primera vez.
+
+git push
+→ Sube los nuevos commits a GitHub.
+
+git pull
+→ Descarga e integra los cambios del repositorio remoto.
+
+git clone https://github.com/FAy08024/ova-integrales.git
+→ Descarga una copia del proyecto desde GitHub.
+
+git diff
+→ Muestra las modificaciones que todavía no se han preparado.
+
+git restore nombre_archivo
+→ Descarta cambios locales no preparados de un archivo.
+
+========================================
+6. VERSIONES DEL PROYECTO
+========================================
+
+git tag v0.1.0
+→ Crea una etiqueta de versión en el commit actual.
+
+git tag
+→ Muestra todas las versiones etiquetadas.
+
+git push origin v0.1.0
+→ Publica la etiqueta v0.1.0 en GitHub.
+
+git log --oneline --all
+→ Consulta el historial de commits de las ramas locales.
+
+========================================
+7. COMANDOS DE USO FRECUENTE
+========================================
+
+cd nombre_carpeta
+→ Entra en una carpeta.
+
+cd ..
+→ Regresa a la carpeta anterior.
+
+mkdir nombre_carpeta
+→ Crea una carpeta.
+
+dir
+→ Muestra los archivos y carpetas en PowerShell o CMD.
+
+cls
+→ Limpia la terminal.
+
+Ctrl + C
+→ Detiene el servidor de Django cuando está ejecutándose.
+
+========================================
+8. FLUJO DIARIO DE TRABAJO
+========================================
+
+1. Activar el entorno virtual:
+.\venv\Scripts\Activate.ps1
+
+2. Descargar cambios del equipo:
+git pull
+
+3. Ejecutar Django:
+python manage.py runserver
+
+4. Revisar cambios realizados:
+git status
+
+5. Preparar los cambios:
+git add .
+
+6. Guardar los cambios:
+git commit -m "feat: descripción de la funcionalidad"
+
+7. Subir los cambios a GitHub:
+git push
+
+8. Desactivar el entorno virtual:
+deactivate
+
+========================================
+NOTAS IMPORTANTES
+========================================
+
+- No subir la carpeta venv a GitHub.
+- Mantener actualizado requirements.txt.
+- Utilizar .gitignore para excluir archivos innecesarios.
+- No publicar contraseñas ni claves privadas.
+- Los comandos startproject y startapp solo se utilizan cuando se necesita crear el proyecto o una nueva aplicación.
+- git commit guarda cambios localmente.
+- git push publica los commits en GitHub.
+- El comando git restore descarta modificaciones; utilizarlo con cuidado.

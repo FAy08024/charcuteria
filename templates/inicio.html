@@ -1,0 +1,42 @@
+
+
+{% extends 'base.html' %}
+
+{% block title %}Inicio | Charcutería{% endblock %}
+
+{% block content %}
+
+<h1>Bienvenido al Sistema de Charcutería</h1>
+
+<p>
+    Sistema para gestionar clientes, productos,
+    inventario, ventas y cuentas pendientes.
+</p>
+
+<h2>Menú principal</h2>
+
+<div class="contenedor">
+
+    <div class="tarjeta">
+        <h3>Clientes</h3>
+        <p>Consultar y administrar clientes.</p>
+    </div>
+
+    <div class="tarjeta">
+        <h3>Inventario</h3>
+        <p>Consultar productos y existencias.</p>
+    </div>
+
+    <div class="tarjeta">
+        <h3>Ventas</h3>
+        <p>Registrar ventas de contado y crédito.</p>
+    </div>
+
+    <div class="tarjeta">
+        <h3>Cuentas pendientes</h3>
+        <p>Consultar deudas y registrar abonos.</p>
+    </div>
+
+</div>
+
+{% endblock %}
