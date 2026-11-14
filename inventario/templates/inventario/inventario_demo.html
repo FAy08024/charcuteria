@@ -1,0 +1,511 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inventario | Charcutería{% endblock %}
+
+{% block content %}
+
+<section class="inv-pagina">
+    <div class="inv-contenedor">
+
+        <!-- ENCABEZADO NAVIDEÑO -->
+        <header class="inv-banner">
+            <div>
+                <span>✦ CHARCUTERÍA · ADMINISTRACIÓN ✦</span>
+                <h1>Inventario de mercancía</h1>
+                <p>
+                    Controla las existencias y entradas
+                    de productos de nuestra charcutería.
+                </p>
+            </div>
+            <span class="inv-copo" aria-hidden="true">❄</span>
+        </header>
+
+        <div class="inv-navegacion">
+            <a href="{% url 'panel_usuario' %}">
+                ← Volver al panel
+            </a>
+            <span>DATOS DE DEMOSTRACIÓN</span>
+        </div>
+
+        <!-- INDICADORES -->
+        <div class="inv-resumen">
+
+            <div class="inv-resumen-card">
+                <span>📦</span>
+                <div>
+                    <small>Productos registrados</small>
+                    <strong id="invTotalProductos">
+                        {{ resumen.total_productos }}
+                    </strong>
+                </div>
+            </div>
+
+            <div class="inv-resumen-card">
+                <span>🏬</span>
+                <div>
+                    <small>Unidades disponibles</small>
+                    <strong id="invTotalUnidades">
+                        {{ resumen.total_unidades }}
+                    </strong>
+                </div>
+            </div>
+
+            <div class="inv-resumen-card">
+                <span>⚠️</span>
+                <div>
+                    <small>Stock bajo</small>
+                    <strong id="invStockBajo">
+                        {{ resumen.stock_bajo }}
+                    </strong>
+                </div>
+            </div>
+
+            <div class="inv-resumen-card">
+                <span>❌</span>
+                <div>
+                    <small>Agotados</small>
+                    <strong id="invAgotados">
+                        {{ resumen.agotados }}
+                    </strong>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- CATÁLOGO DE INVENTARIO -->
+        <div class="inv-seccion-titulo">
+            <div>
+                <h2>Mercancía registrada</h2>
+                <p>
+                    Selecciona un producto para consultar
+                    sus detalles y registrar una entrada.
+                </p>
+            </div>
+        </div>
+
+        <div class="inv-herramientas">
+            <input
+                type="search"
+                id="invBuscar"
+                placeholder="Buscar producto o código..."
+                aria-label="Buscar producto"
+            >
+
+            <select id="invFiltro" aria-label="Filtrar inventario">
+                <option value="todos">Todos los productos</option>
+                <option value="disponible">Disponibles</option>
+                <option value="bajo">Stock bajo</option>
+                <option value="agotado">Agotados</option>
+            </select>
+        </div>
+
+        <!-- PRODUCTOS -->
+        <div class="inv-grid">
+
+            {% for producto in productos %}
+
+            <button
+                type="button"
+                class="inv-producto"
+                data-nombre="{{ producto.nombre }}"
+                data-codigo="{{ producto.codigo }}"
+                data-categoria="{{ producto.categoria }}"
+                data-stock="{{ producto.stock }}"
+                data-minimo="{{ producto.minimo }}"
+                data-unidad="{{ producto.unidad }}"
+                data-imagen="{% static producto.imagen %}"
+                data-proveedor="{{ producto.proveedor }}"
+                data-fecha="{{ producto.ultima_entrada }}"
+                data-descripcion="{{ producto.descripcion }}"
+                data-estado="{{ producto.estado }}"
+            >
+
+                <div class="inv-producto-foto">
+                    <img
+                        src="{% static producto.imagen %}"
+                        alt="{{ producto.nombre }}"
+                        loading="lazy"
+                    >
+                </div>
+
+                <div class="inv-producto-info">
+                    <small>{{ producto.codigo }}</small>
+                    <h3>{{ producto.nombre }}</h3>
+                    <p>{{ producto.categoria }}</p>
+
+                    <div class="inv-producto-pie">
+                        <div>
+                            <span>Existencias</span>
+                            <strong class="inv-cantidad">
+                                {{ producto.stock }} {{ producto.unidad }}
+                            </strong>
+                        </div>
+
+                        <span class="inv-estado inv-estado-{{ producto.estado }}">
+                            {{ producto.estado_texto }}
+                        </span>
+                    </div>
+
+                    <span class="inv-ver">Ver detalles +</span>
+                </div>
+
+            </button>
+
+            {% endfor %}
+
+        </div>
+
+        <p class="inv-vacio" id="invVacio" hidden>
+            No se encontraron productos.
+        </p>
+
+        <!-- REGISTRO DE ENTRADAS -->
+        <section class="inv-entradas">
+            <div class="inv-seccion-titulo">
+                <div>
+                    <h2>Entradas de mercancía</h2>
+                    <p>Movimientos recientes de demostración.</p>
+                </div>
+            </div>
+
+            <div class="inv-entradas-lista" id="invEntradasLista">
+
+                {% for entrada in entradas %}
+
+                <div class="inv-entrada">
+                    <div>
+                        <strong>{{ entrada.producto }}</strong>
+                        <span>{{ entrada.fecha }}</span>
+                    </div>
+                    <strong>+{{ entrada.cantidad }} unidades</strong>
+                </div>
+
+                {% endfor %}
+
+            </div>
+        </section>
+
+        <p class="inv-aviso">
+            ❄ Inventario de demostración. Las entradas que
+            registres modificarán las cantidades en esta
+            pantalla, pero no se guardarán en la base de datos.
+        </p>
+
+    </div>
+</section>
+
+
+<!-- VENTANA EMERGENTE DEL PRODUCTO -->
+<dialog class="inv-modal" id="invModal"
+        aria-labelledby="invModalTitulo">
+
+    <div class="inv-modal-encabezado">
+        <div>
+            <span>✦ CHARCUTERÍA ✦</span>
+            <h2>Detalle de mercancía</h2>
+        </div>
+
+        <button type="button" id="invCerrar"
+                class="inv-cerrar"
+                aria-label="Cerrar ventana">
+            ×
+        </button>
+    </div>
+
+    <div class="inv-modal-contenido">
+
+        <!-- FOTO CUADRADA -->
+        <div class="inv-modal-foto">
+            <img id="invModalImagen" src="" alt="">
+        </div>
+
+        <!-- INFORMACIÓN -->
+        <div class="inv-modal-datos">
+
+            <small id="invModalCodigo"></small>
+            <h2 id="invModalTitulo"></h2>
+            <p id="invModalDescripcion"></p>
+
+            <span class="inv-estado" id="invModalEstado"></span>
+
+            <div class="inv-modal-stock">
+                <span>EXISTENCIAS ACTUALES</span>
+                <strong id="invModalStock"></strong>
+            </div>
+
+            <div class="inv-modal-detalles">
+
+                <div>
+                    <span>Categoría</span>
+                    <strong id="invModalCategoria"></strong>
+                </div>
+
+                <div>
+                    <span>Stock mínimo</span>
+                    <strong id="invModalMinimo"></strong>
+                </div>
+
+                <div>
+                    <span>Proveedor</span>
+                    <strong id="invModalProveedor"></strong>
+                </div>
+
+                <div>
+                    <span>Última entrada registrada</span>
+                    <strong id="invModalFecha"></strong>
+                </div>
+
+            </div>
+
+            <!-- REGISTRAR ENTRADA -->
+            <form id="invFormulario" class="inv-formulario">
+
+                <label for="invCantidad">
+                    Registrar entrada de mercancía
+                </label>
+
+                <div class="inv-formulario-fila">
+                    <input
+                        type="number"
+                        id="invCantidad"
+                        min="1"
+                        step="1"
+                        placeholder="Cantidad"
+                        required
+                    >
+
+                    <button type="submit">
+                        + Agregar
+                    </button>
+                </div>
+
+                <small>
+                    Simulación: no modifica SQLite.
+                </small>
+
+                <p id="invMensaje" role="status" aria-live="polite"></p>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</dialog>
+
+
+<!-- FUNCIONAMIENTO DEL INVENTARIO -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const productos = document.querySelectorAll('.inv-producto');
+    const modal = document.getElementById('invModal');
+    const cerrar = document.getElementById('invCerrar');
+    const formulario = document.getElementById('invFormulario');
+    const cantidad = document.getElementById('invCantidad');
+
+    const buscar = document.getElementById('invBuscar');
+    const filtro = document.getElementById('invFiltro');
+    const vacio = document.getElementById('invVacio');
+
+    let productoActual = null;
+
+    function obtenerEstado(stock, minimo) {
+        if (stock === 0) {
+            return { clase: 'agotado', texto: 'Agotado' };
+        }
+        if (stock <= minimo) {
+            return { clase: 'bajo', texto: 'Stock bajo' };
+        }
+        return { clase: 'disponible', texto: 'Disponible' };
+    }
+
+    function actualizarResumen() {
+        let unidades = 0;
+        let bajos = 0;
+        let agotados = 0;
+
+        productos.forEach(function (producto) {
+            const stock = Number(producto.dataset.stock);
+            const minimo = Number(producto.dataset.minimo);
+
+            unidades += stock;
+
+            if (stock === 0) {
+                agotados++;
+            } else if (stock <= minimo) {
+                bajos++;
+            }
+        });
+
+        document.getElementById('invTotalUnidades').textContent = unidades;
+        document.getElementById('invStockBajo').textContent = bajos;
+        document.getElementById('invAgotados').textContent = agotados;
+    }
+
+    function actualizarFiltros() {
+        const texto = buscar.value.toLowerCase().trim();
+        const estado = filtro.value;
+        let visibles = 0;
+
+        productos.forEach(function (producto) {
+            const nombre = producto.dataset.nombre.toLowerCase();
+            const codigo = producto.dataset.codigo.toLowerCase();
+            const categoria = producto.dataset.categoria.toLowerCase();
+
+            const coincideTexto =
+                nombre.includes(texto) ||
+                codigo.includes(texto) ||
+                categoria.includes(texto);
+
+            const coincideEstado =
+                estado === 'todos' ||
+                producto.dataset.estado === estado;
+
+            const mostrar = coincideTexto && coincideEstado;
+
+            producto.hidden = !mostrar;
+            if (mostrar) visibles++;
+        });
+
+        vacio.hidden = visibles > 0;
+    }
+
+    function actualizarProducto(producto) {
+        const stock = Number(producto.dataset.stock);
+        const minimo = Number(producto.dataset.minimo);
+        const estado = obtenerEstado(stock, minimo);
+
+        producto.dataset.estado = estado.clase;
+
+        producto.querySelector('.inv-cantidad').textContent =
+            stock + ' ' + producto.dataset.unidad;
+
+        const etiqueta = producto.querySelector('.inv-estado');
+        etiqueta.className = 'inv-estado inv-estado-' + estado.clase;
+        etiqueta.textContent = estado.texto;
+
+        if (producto === productoActual) {
+            document.getElementById('invModalStock').textContent =
+                stock + ' ' + producto.dataset.unidad;
+
+            const modalEstado = document.getElementById('invModalEstado');
+            modalEstado.className =
+                'inv-estado inv-estado-' + estado.clase;
+            modalEstado.textContent = estado.texto;
+        }
+    }
+
+    function abrirProducto(producto) {
+        productoActual = producto;
+        const datos = producto.dataset;
+
+        document.getElementById('invModalImagen').src = datos.imagen;
+        document.getElementById('invModalImagen').alt =
+            'Foto de ' + datos.nombre;
+
+        document.getElementById('invModalTitulo').textContent = datos.nombre;
+        document.getElementById('invModalCodigo').textContent = datos.codigo;
+        document.getElementById('invModalDescripcion').textContent =
+            datos.descripcion;
+        document.getElementById('invModalCategoria').textContent =
+            datos.categoria;
+        document.getElementById('invModalMinimo').textContent =
+            datos.minimo + ' ' + datos.unidad;
+        document.getElementById('invModalProveedor').textContent =
+            datos.proveedor;
+        document.getElementById('invModalFecha').textContent = datos.fecha;
+
+        formulario.reset();
+        document.getElementById('invMensaje').textContent = '';
+
+        actualizarProducto(producto);
+        modal.showModal();
+        cerrar.focus();
+    }
+
+    productos.forEach(function (producto) {
+        producto.addEventListener('click', function () {
+            abrirProducto(producto);
+        });
+    });
+
+    cerrar.addEventListener('click', function () {
+        modal.close();
+    });
+
+    modal.addEventListener('click', function (evento) {
+        if (evento.target !== modal) return;
+
+        const rect = modal.getBoundingClientRect();
+
+        const fuera =
+            evento.clientX < rect.left ||
+            evento.clientX > rect.right ||
+            evento.clientY < rect.top ||
+            evento.clientY > rect.bottom;
+
+        if (fuera) modal.close();
+    });
+
+    formulario.addEventListener('submit', function (evento) {
+        evento.preventDefault();
+
+        if (!productoActual) return;
+
+        const entrada = Number(cantidad.value);
+        const anterior = Number(productoActual.dataset.stock);
+        const nuevo = anterior + entrada;
+
+        if (!Number.isSafeInteger(entrada) ||
+            entrada <= 0 ||
+            !Number.isSafeInteger(nuevo)) {
+            document.getElementById('invMensaje').textContent =
+                'Ingresa una cantidad válida.';
+            return;
+        }
+
+        productoActual.dataset.stock = String(nuevo);
+
+        actualizarProducto(productoActual);
+        actualizarResumen();
+        actualizarFiltros();
+
+        // Agregar movimiento ficticio al registro
+        const fila = document.createElement('div');
+        fila.className = 'inv-entrada';
+
+        const informacion = document.createElement('div');
+
+        const nombre = document.createElement('strong');
+        nombre.textContent = productoActual.dataset.nombre;
+
+        const fecha = document.createElement('span');
+        fecha.textContent = new Date().toLocaleString('es-CO');
+
+        informacion.append(nombre, fecha);
+
+        const valor = document.createElement('strong');
+        valor.textContent =
+            '+' + entrada + ' ' + productoActual.dataset.unidad;
+
+        fila.append(informacion, valor);
+
+        document.getElementById('invEntradasLista').prepend(fila);
+
+        document.getElementById('invMensaje').textContent =
+            'Entrada simulada correctamente. Nuevo stock: ' +
+            nuevo + ' ' + productoActual.dataset.unidad;
+
+        cantidad.value = '';
+    });
+
+    buscar.addEventListener('input', actualizarFiltros);
+    filtro.addEventListener('change', actualizarFiltros);
+
+});
+</script>
+
+{% endblock %}

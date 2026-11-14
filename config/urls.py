@@ -25,11 +25,12 @@ from .views import inicio
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', inicio, name='inicio'),
-
+    path('productos/', include('productos.urls')),
     path('usuarios/', include('usuarios.urls')),
     path('clientes/', include('clientes.urls')),
     path('inventario/', include('inventario.urls')),
     path('ventas/', include('ventas.urls')),
+    path('recordatorios/', include('recordatorios.urls')),
     path('cuentas/', include('cuentas.urls')),
     path('reportes/', include('reportes.urls')),
 ]

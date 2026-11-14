@@ -1,0 +1,275 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mi almacén | Charcutería{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=15">
+
+<main class="ia-pagina">
+    <div class="ia-contenedor">
+
+        <header class="ia-banner">
+            <div>
+                <small>✦ CHARCUTERÍA · ESTACIÓN DEL EMPLEADO ✦</small>
+                <h1>Mi almacén 📦</h1>
+                <p>Revisa productos y reporta incidencias de mercancía.</p>
+                <span>Sesión: {{ request.user.username }}</span>
+            </div>
+        </header>
+
+        <nav class="ia-regreso">
+            <a href="{% url 'panel_empleado' %}">
+                ← Volver al panel del empleado
+            </a>
+        </nav>
+
+        {% for message in messages %}
+            <div class="ia-mensaje">{{ message }}</div>
+        {% endfor %}
+
+        <section class="ia-resumen">
+            <article>
+                <span>📦 Productos</span>
+                <strong>{{ resumen.productos }}</strong>
+            </article>
+
+            <article>
+                <span>⚠️ Stock bajo o agotado</span>
+                <strong>{{ resumen.stock_bajo }}</strong>
+            </article>
+
+            <article>
+                <span>🔔 Mis reportes pendientes</span>
+                <strong>{{ resumen.reportes_pendientes }}</strong>
+            </article>
+        </section>
+
+        <div class="ia-columnas">
+
+            <!-- CATÁLOGO -->
+            <section class="ia-panel">
+                <div class="ia-titulo">
+                    <small>✦ DISPONIBILIDAD ✦</small>
+                    <h2>Productos en almacén</h2>
+                    <p>Consulta las cantidades registradas.</p>
+                </div>
+
+                <input type="search"
+                       id="iaBuscar"
+                       class="ia-input"
+                       placeholder="Buscar producto o código...">
+
+                <div class="ia-productos">
+                    {% for producto in productos %}
+
+                        <article class="ia-producto"
+                                 data-busqueda="{{ producto.nombre|lower }} {{ producto.codigo|lower }}">
+
+                            <div class="ia-producto-foto">
+                                <img src="{% static producto.imagen %}"
+                                     alt="{{ producto.nombre }}"
+                                     loading="lazy">
+                            </div>
+
+                            <div class="ia-producto-info">
+                                <small>{{ producto.codigo }}</small>
+                                <h3>{{ producto.nombre }}</h3>
+                                <p>{{ producto.categoria }}</p>
+
+                                <strong>
+                                    {{ producto.stock }} {{ producto.unidad }}
+                                </strong>
+
+                                <span class="ia-estado ia-{{ producto.estado }}">
+                                    {{ producto.estado_texto }}
+                                </span>
+                            </div>
+                        </article>
+
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- FORMULARIO DE INCIDENCIA -->
+            <section class="ia-panel">
+                <div class="ia-titulo">
+                    <small>✦ AVISAR AL ADMINISTRADOR ✦</small>
+                    <h2>Reportar incidencia</h2>
+                    <p>
+                        Describe el problema encontrado.
+                        No modificarás las existencias directamente.
+                    </p>
+                </div>
+
+                <form method="post"
+                      enctype="multipart/form-data"
+                      class="ia-formulario">
+
+                    {% csrf_token %}
+
+                    {% if formulario.errors %}
+                        <div class="ia-error" role="alert">
+                            Revisa los datos del reporte.
+                            {% for campo in formulario %}
+                                {% for error in campo.errors %}
+                                    <p>{{ campo.label }}: {{ error }}</p>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <label for="iaProducto">Producto</label>
+
+                    <select id="iaProducto"
+                            class="ia-input"
+                            name="producto_codigo"
+                            required>
+
+                        <option value="">Seleccionar producto</option>
+
+                        {% for producto in productos %}
+                            <option value="{{ producto.codigo }}">
+                                {{ producto.nombre }} · {{ producto.codigo }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="iaTipo">Tipo de incidencia</label>
+
+                    <select id="iaTipo"
+                            class="ia-input"
+                            name="tipo"
+                            required>
+
+                        <option value="danado">Producto dañado</option>
+                        <option value="diferencia">
+                            Diferencia de existencias
+                        </option>
+                        <option value="reposicion">
+                            Solicitud de reposición
+                        </option>
+                        <option value="otro">Otro problema</option>
+                    </select>
+
+                    <label for="iaCantidad">Unidades afectadas</label>
+
+                    <input type="number"
+                           id="iaCantidad"
+                           class="ia-input"
+                           name="cantidad"
+                           min="1"
+                           max="1000"
+                           value="1"
+                           required>
+
+                    <label for="iaDescripcion">¿Qué ocurrió?</label>
+
+                    <textarea id="iaDescripcion"
+                              name="descripcion"
+                              class="ia-input ia-textarea"
+                              maxlength="700"
+                              rows="5"
+                              placeholder="Ejemplo: Encontré un paquete de jamón con el empaque deteriorado."
+                              required></textarea>
+
+                    <label for="iaFoto">Fotografía (opcional)</label>
+
+                    <input type="file"
+                           id="iaFoto"
+                           class="ia-input"
+                           name="foto"
+                           accept="image/jpeg,image/png,image/webp">
+
+                    <p class="ia-ayuda">
+                        Máximo 3 MB. El administrador revisará
+                        el reporte antes de modificar el stock.
+                    </p>
+
+                    <button type="submit" class="ia-guardar">
+                        🔔 Enviar reporte al administrador
+                    </button>
+
+                </form>
+            </section>
+
+        </div>
+
+        <!-- HISTORIAL PERSONAL -->
+        <section class="ia-panel ia-historial">
+
+            <div class="ia-titulo">
+                <small>✦ SEGUIMIENTO PERSONAL ✦</small>
+                <h2>Mis incidencias</h2>
+                <p>Consulta qué decidió el administrador.</p>
+            </div>
+
+            {% for reporte in reportes %}
+
+                <article class="ia-reporte">
+
+                    <div>
+                        <strong>{{ reporte.producto_nombre }}</strong>
+
+                        <p>
+                            {{ reporte.get_tipo_display }}
+                            · {{ reporte.cantidad }} unidades
+                        </p>
+
+                        <small>
+                            {{ reporte.fecha|date:'d/m/Y H:i' }}
+                        </small>
+
+                        <p>{{ reporte.descripcion }}</p>
+
+                        {% if reporte.respuesta %}
+                            <p class="ia-respuesta">
+                                <strong>Respuesta del administrador:</strong>
+                                {{ reporte.respuesta }}
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <span class="ia-estado ia-{{ reporte.estado }}">
+                        {{ reporte.get_estado_display }}
+                    </span>
+
+                </article>
+
+            {% empty %}
+
+                <div class="ia-vacio">
+                    📋 Todavía no has enviado incidencias.
+                </div>
+
+            {% endfor %}
+
+        </section>
+
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const buscador = document.getElementById('iaBuscar');
+    const productos = document.querySelectorAll('.ia-producto');
+
+    buscador.addEventListener('input', function () {
+
+        const texto = buscador.value.toLowerCase().trim();
+
+        productos.forEach(function (producto) {
+
+            producto.hidden = !producto.dataset.busqueda.includes(
+                texto
+            );
+
+        });
+
+    });
+
+});
+</script>
+{% endblock %}

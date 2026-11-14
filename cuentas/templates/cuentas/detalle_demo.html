@@ -1,0 +1,284 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle del Crédito | Charcutería{% endblock %}
+
+{% block content %}
+
+<section class="cp-pagina">
+    <div class="cp-contenedor">
+
+        <!-- NAVEGACIÓN -->
+        <div class="cp-navegacion">
+
+            <a href="{% url 'cuentas_demo' %}">
+                ← Volver a cuentas pendientes
+            </a>
+
+            <span>CUENTA DE DEMOSTRACIÓN</span>
+
+        </div>
+
+        <!-- PORTADA -->
+        <div class="cp-banner">
+
+            <div>
+                <span>✦ CHARCUTERÍA · CRÉDITOS ✦</span>
+
+                <h1>Detalle de cuenta</h1>
+
+                <p>Información financiera del cliente.</p>
+            </div>
+
+            <div class="cp-copo" aria-hidden="true">
+                ❄
+            </div>
+
+        </div>
+
+        <!-- PERFIL DEL CLIENTE -->
+        <div class="cp-perfil">
+
+            <div class="cp-avatar cp-avatar-grande">
+
+                {% if cuenta.cliente.foto %}
+
+                    <img
+                        src="{% static cuenta.cliente.foto %}"
+                        alt="Foto de {{ cuenta.cliente.nombre }}"
+                    >
+
+                {% else %}
+
+                    {{ cuenta.cliente.iniciales }}
+
+                {% endif %}
+
+            </div>
+
+            <div>
+
+                <span class="cp-etiqueta">
+                    CLIENTE {{ cuenta.cliente.tipo|upper }}
+                </span>
+
+                <h2>{{ cuenta.cliente.nombre }}</h2>
+
+                <p>
+                    {{ cuenta.cliente.codigo }} · {{ cuenta.numero }}
+                </p>
+
+            </div>
+
+        </div>
+
+        <!-- SALDO PRINCIPAL -->
+        <div class="cp-saldo-principal">
+
+            <span>SALDO ACTUAL PENDIENTE</span>
+
+            <h2>{{ cuenta.saldo_formato }}</h2>
+
+            <p>
+                Total acumulado menos los abonos registrados.
+            </p>
+
+        </div>
+
+        <!-- DETALLES FINANCIEROS -->
+        <div class="cp-detalle-grid">
+
+            <div class="cp-dato">
+
+                <span>Valor inicial de la compra</span>
+
+                <strong>
+                    {{ cuenta.capital_formato }}
+                </strong>
+
+            </div>
+
+            <div class="cp-dato">
+
+                <span>Interés mensual de ejemplo</span>
+
+                <strong>
+                    {{ cuenta.tasa }} %
+                </strong>
+
+            </div>
+
+            <div class="cp-dato">
+
+                <span>Interés acumulado</span>
+
+                <strong>
+                    {{ cuenta.interes_formato }}
+                </strong>
+
+            </div>
+
+            <div class="cp-dato">
+
+                <span>Total con interés</span>
+
+                <strong>
+                    {{ cuenta.total_formato }}
+                </strong>
+
+            </div>
+
+            <div class="cp-dato">
+
+                <span>Abonos realizados</span>
+
+                <strong>
+                    {{ cuenta.abonos_formato }}
+                </strong>
+
+            </div>
+
+            <div class="cp-dato cp-dato-destacado">
+
+                <span>Deuda restante</span>
+
+                <strong>
+                    {{ cuenta.saldo_formato }}
+                </strong>
+
+            </div>
+
+        </div>
+
+        <!-- PROGRESO DEL CRÉDITO -->
+        <div class="cp-plazo">
+
+            <div class="cp-plazo-encabezado">
+
+                <div>
+                    <h2>Progreso del crédito</h2>
+
+                    <p>
+                        Tiempo transcurrido del plazo acordado.
+                    </p>
+                </div>
+
+                <strong>
+                    {{ cuenta.meses_transcurridos }}
+                    de {{ cuenta.plazo_meses }} meses
+                </strong>
+
+            </div>
+
+            <!-- BARRA CORREGIDA -->
+            <div class="cp-barra cp-barra-grande">
+
+                <div
+                    class="cp-barra-progreso"
+                    data-porcentaje="{{ cuenta.porcentaje }}"
+                    role="progressbar"
+                    aria-label="Tiempo transcurrido del crédito"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="{{ cuenta.porcentaje }}"
+                ></div>
+
+            </div>
+
+            <!-- MESES -->
+            <div class="cp-meses">
+
+                {% for mes in cuenta.meses %}
+
+                    <div class="cp-mes {% if mes.transcurrido %}cp-mes-activo{% endif %}">
+
+                        <strong>
+                            {{ mes.numero }}
+                        </strong>
+
+                        <span>Mes</span>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+            <!-- FECHAS -->
+            <div class="cp-fechas">
+
+                <div>
+                    <span>Fecha de inicio</span>
+
+                    <strong>
+                        {{ cuenta.inicio }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Tiempo restante</span>
+
+                    <strong>
+                        {{ cuenta.meses_restantes }} meses
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Fecha de vencimiento</span>
+
+                    <strong>
+                        {{ cuenta.vencimiento }}
+                    </strong>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- AVISO -->
+        <div class="cp-aviso">
+
+            ❄ Esta información es ficticia. El interés mostrado
+            es un cálculo simple de demostración sobre el capital
+            inicial. Los plazos, pagos y tasas reales deberán
+            definirse con la lógica del negocio.
+
+        </div>
+
+        <!-- BOTÓN REGRESAR -->
+        <a
+            href="{% url 'cuentas_demo' %}"
+            class="cp-volver"
+        >
+            VOLVER A CUENTAS
+        </a>
+
+    </div>
+</section>
+
+
+<!-- JAVASCRIPT DE LA BARRA DE PROGRESO -->
+<script>
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    const barras = document.querySelectorAll('.cp-barra-progreso');
+
+    barras.forEach(function (barra) {
+
+        const porcentaje = Number(barra.dataset.porcentaje);
+
+        const valor = Number.isFinite(porcentaje)
+            ? Math.max(0, Math.min(100, porcentaje))
+            : 0;
+
+        barra.style.width = valor + '%';
+
+    });
+
+});
+
+</script>
+
+{% endblock %}

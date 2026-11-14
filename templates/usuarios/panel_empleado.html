@@ -1,0 +1,241 @@
+
+{% extends 'usuarios/base_panel.html' %}
+
+{% block title %}Panel Empleado | Charcutería{% endblock %}
+
+{% block panel_titulo %}
+Panel del Empleado
+{% endblock %}
+
+{% block panel_descripcion %}
+Bienvenido al sistema. Gestiona las operaciones
+diarias de nuestra charcutería.
+{% endblock %}
+
+{% block panel_rol %}
+Empleado
+{% endblock %}
+
+{% block panel_modulos %}
+
+<!-- =====================================
+     CONTROL DEL TURNO
+===================================== -->
+
+<section class="te-control-turno">
+
+    <div>
+        <small>✦ CONTROL DE JORNADA ✦</small>
+
+        {% if turno_abierto %}
+            <h3>🟢 Turno en curso</h3>
+            <p>
+                Iniciaste el
+                {{ turno_abierto.inicio|date:"d/m/Y" }}
+                a las
+                {{ turno_abierto.inicio|date:"h:i A" }}.
+            </p>
+        {% else %}
+            <h3>🕒 Tu turno no ha comenzado</h3>
+            <p>
+                Inicia tu turno para registrar ventas
+                y recibir abonos.
+            </p>
+        {% endif %}
+    </div>
+
+    {% if turno_abierto %}
+
+        <button type="button"
+                class="te-boton"
+                onclick="document.getElementById('teModalFinalizar').showModal()">
+            Finalizar turno
+        </button>
+
+    {% else %}
+
+        <form method="post" action="{% url 'iniciar_turno' %}">
+            {% csrf_token %}
+
+            <button type="submit" class="te-boton">
+                ▶ Iniciar turno
+            </button>
+        </form>
+
+    {% endif %}
+
+</section>
+
+
+<!-- NUEVA VENTA -->
+<a href="{% url 'nueva_venta' %}"
+   class="panel-tarjeta {% if not turno_abierto %}te-requiere-turno{% endif %}">
+
+    <div class="panel-icono">🛒</div>
+    <h3>Nueva venta</h3>
+    <p>Registrar ventas de contado o crédito.</p>
+
+</a>
+
+
+<!-- CLIENTES -->
+<a href="{% url 'clientes_demo' %}" class="panel-tarjeta">
+    <div class="panel-icono">👥</div>
+    <h3>Clientes</h3>
+    <p>Consultar información de clientes.</p>
+</a>
+
+
+<!-- MI ALMACÉN -->
+<a href="{% url 'mi_almacen' %}" class="panel-tarjeta">
+    <div class="panel-icono">📦</div>
+    <h3>Mi almacén</h3>
+    <p>Revisar mercancía y reportar incidencias.</p>
+</a>
+
+
+
+<a href="{% url 'resumen_dia' %}" class="panel-tarjeta">
+    <div class="panel-icono">📋</div>
+    <h3>Resumen del día</h3>
+    <p>Consultar los resultados y cierres de mis turnos.</p>
+</a>
+
+
+<!-- REGISTRAR ABONO -->
+<a href="{% url 'registrar_abono' %}"
+   class="panel-tarjeta {% if not turno_abierto %}te-requiere-turno{% endif %}">
+
+    <div class="panel-icono">💳</div>
+    <h3>Registrar abono</h3>
+    <p>Registrar pagos parciales de clientes.</p>
+
+</a>
+
+<a href="{% url 'cuentas_demo' %}" class="panel-tarjeta">
+    <div class="panel-icono">💰</div>
+    <h3>Cuentas pendientes</h3>
+    <p>Consultar deudas y saldos pendientes.</p>
+</a>
+
+
+
+<!-- FACTURAS -->
+<a href="{% url 'facturas_demo' %}" class="panel-tarjeta">
+    <div class="panel-icono">🧾</div>
+    <h3>Facturas</h3>
+    <p>Consultar facturas del día.</p>
+</a>
+
+
+<!-- RECORDATORIOS -->
+<a href="{% url 'lista_recordatorios' %}" class="panel-tarjeta">
+    <div class="panel-icono">🔔</div>
+    <h3>Recordatorios</h3>
+    <p>Consultar vencimientos y alertas de cobro.</p>
+</a>
+
+
+
+
+{% if not turno_abierto %}
+
+<dialog id="teModalIniciar" class="te-modal">
+
+    <div class="te-modal-icono">🕒</div>
+
+    <h2>¡Debes iniciar tu turno!</h2>
+
+    <p>
+        Antes de registrar una venta o un abono,
+        debes iniciar tu jornada laboral.
+    </p>
+
+    <div class="te-modal-acciones">
+
+        <button type="button"
+                class="te-boton-cancelar"
+                onclick="document.getElementById('teModalIniciar').close()">
+            Cancelar
+        </button>
+
+        <form method="post" action="{% url 'iniciar_turno' %}">
+            {% csrf_token %}
+
+            <button type="submit" class="te-boton">
+                Iniciar turno
+            </button>
+        </form>
+
+    </div>
+
+</dialog>
+
+{% endif %}
+
+
+{% if turno_abierto %}
+
+<dialog id="teModalFinalizar" class="te-modal">
+
+    <div class="te-modal-icono">📋</div>
+
+    <h2>¿Finalizar tu turno?</h2>
+
+    <p>
+        Se guardará tu hora de salida junto con
+        las ventas, abonos y dinero recaudado.
+    </p>
+
+    <p>
+        El resumen quedará pendiente de revisión
+        por el administrador.
+    </p>
+
+    <div class="te-modal-acciones">
+
+        <button type="button"
+                class="te-boton-cancelar"
+                onclick="document.getElementById('teModalFinalizar').close()">
+            Seguir trabajando
+        </button>
+
+        <form method="post" action="{% url 'finalizar_turno' %}">
+            {% csrf_token %}
+
+            <button type="submit" class="te-boton">
+                Confirmar cierre
+            </button>
+        </form>
+
+    </div>
+
+</dialog>
+
+{% endif %}
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const modalInicio = document.getElementById('teModalIniciar');
+
+    if (modalInicio) {
+
+        document.querySelectorAll('.te-requiere-turno').forEach(function (enlace) {
+
+            enlace.addEventListener('click', function (evento) {
+
+                evento.preventDefault();
+                modalInicio.showModal();
+
+            });
+
+        });
+
+    }
+
+});
+</script>
+
+{% endblock %}

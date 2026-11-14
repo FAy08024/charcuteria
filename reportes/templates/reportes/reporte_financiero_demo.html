@@ -1,0 +1,689 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reportes Financieros | Charcutería{% endblock %}
+
+{% block content %}
+
+<section class="rf-pagina"
+         id="rfPagina"
+         data-hoy="{{ fecha_hoy|date:'Y-m-d' }}"
+         data-capital="{{ capital_inicial }}">
+
+    <div class="rf-contenedor">
+
+        <!-- PORTADA NAVIDEÑA -->
+        <header class="rf-banner">
+            <div>
+                <span>✦ CHARCUTERÍA · ANÁLISIS FINANCIERO ✦</span>
+                <h1>Reportes financieros</h1>
+                <p>
+                    Analiza el rendimiento, las ventas,
+                    las ganancias y el capital de nuestra empresa.
+                </p>
+            </div>
+
+            <div class="rf-decoracion" aria-hidden="true">❄</div>
+        </header>
+
+        <!-- NAVEGACIÓN -->
+        <div class="rf-navegacion">
+            <a href="{% url 'panel_usuario' %}">
+                ← Volver al panel administrativo
+            </a>
+
+            <span>SIMULACIÓN FINANCIERA</span>
+        </div>
+
+        <!-- FILTROS DE TIEMPO -->
+        <div class="rf-filtros">
+            <div>
+                <span>CONSULTA DE RESULTADOS</span>
+                <h2>Resumen financiero</h2>
+                <p>Selecciona el periodo que deseas analizar.</p>
+            </div>
+
+            <div class="rf-periodos">
+                <button type="button" class="rf-periodo"
+                        data-periodo="1"
+                        aria-pressed="false">
+                    1 día
+                </button>
+
+                <button type="button" class="rf-periodo activo"
+                        data-periodo="7"
+                        aria-pressed="true">
+                    7 días
+                </button>
+
+                <button type="button" class="rf-periodo"
+                        data-periodo="30"
+                        aria-pressed="false">
+                    1 mes
+                </button>
+
+                <button type="button" class="rf-periodo"
+                        data-periodo="365"
+                        aria-pressed="false">
+                    1 año
+                </button>
+
+                <button type="button" class="rf-periodo"
+                        data-periodo="todas"
+                        aria-pressed="false">
+                    Todo
+                </button>
+            </div>
+        </div>
+
+        <p class="rf-rango" id="rfRango"></p>
+
+        <!-- INDICADORES PRINCIPALES -->
+        <div class="rf-indicadores">
+
+            <article class="rf-indicador">
+                <div class="rf-indicador-icono">🛒</div>
+                <span>VENTAS REGISTRADAS</span>
+                <h3 id="rfVentas">$0</h3>
+                <small id="rfCantidad">0 operaciones</small>
+            </article>
+
+            <article class="rf-indicador">
+                <div class="rf-indicador-icono">💰</div>
+                <span>INTERESES COBRADOS</span>
+                <h3 id="rfIntereses">$0</h3>
+                <small>Ingresos ficticios por intereses</small>
+            </article>
+
+            <article class="rf-indicador">
+                <div class="rf-indicador-icono">📉</div>
+                <span>PÉRDIDAS POR MERMAS</span>
+                <h3 id="rfPerdidas">$0</h3>
+                <small>Productos dañados o desperdiciados</small>
+            </article>
+
+            <article class="rf-indicador">
+                <div class="rf-indicador-icono">🏦</div>
+                <span>CAPITAL ESTIMADO AL CIERRE</span>
+                <h3 id="rfCapital">$0</h3>
+                <small>Modelo patrimonial de demostración</small>
+            </article>
+
+            <article class="rf-indicador">
+                <div class="rf-indicador-icono">📊</div>
+                <span>RESULTADO DEL PERIODO</span>
+                <h3 id="rfResultado">$0</h3>
+                <small>Ingresos menos costos y gastos</small>
+            </article>
+
+            <article class="rf-indicador">
+                <div class="rf-indicador-icono">🎄</div>
+                <span>GASTOS Y COSTOS</span>
+                <h3 id="rfEgresos">$0</h3>
+                <small>Mercancía y gastos operativos</small>
+            </article>
+
+        </div>
+
+        <!-- EVOLUCIÓN DEL CAPITAL -->
+        <section class="rf-panel">
+
+            <div class="rf-panel-titulo">
+                <div>
+                    <span>✦ EVOLUCIÓN ECONÓMICA</span>
+                    <h2>Comportamiento del capital</h2>
+                    <p>
+                        Evolución del capital estimado
+                        durante el periodo seleccionado.
+                    </p>
+                </div>
+
+                <span class="rf-etiqueta">ANÁLISIS DINÁMICO</span>
+            </div>
+
+            <div class="rf-grafico">
+                <svg id="rfGrafico"
+                     viewBox="0 0 900 220"
+                     role="img"
+                     aria-label="Gráfica de evolución del capital">
+                </svg>
+            </div>
+
+            <div class="rf-grafico-pie">
+                <div>
+                    <span>Capital al inicio</span>
+                    <strong id="rfCapitalInicio">$0</strong>
+                </div>
+
+                <div>
+                    <span>Capital al cierre</span>
+                    <strong id="rfCapitalFin">$0</strong>
+                </div>
+            </div>
+
+            <div class="rf-comparacion" id="rfComparacion"
+                 role="status" aria-live="polite">
+            </div>
+
+        </section>
+
+        <!-- DESGLOSE -->
+        <section class="rf-panel">
+
+            <div class="rf-panel-titulo">
+                <div>
+                    <span>✦ DISTRIBUCIÓN DE OPERACIONES</span>
+                    <h2>¿De dónde viene el dinero?</h2>
+                    <p>
+                        Desglose estimado de las operaciones
+                        registradas en el periodo.
+                    </p>
+                </div>
+            </div>
+
+            <div class="rf-desglose">
+
+                <div>
+                    <span>Ventas de contado</span>
+                    <strong id="rfContado">$0</strong>
+                </div>
+
+                <div>
+                    <span>Ventas a crédito</span>
+                    <strong id="rfCredito">$0</strong>
+                </div>
+
+                <div>
+                    <span>Costo de mercancía</span>
+                    <strong id="rfCostos">$0</strong>
+                </div>
+
+                <div>
+                    <span>Gastos operativos</span>
+                    <strong id="rfGastos">$0</strong>
+                </div>
+
+                <div>
+                    <span>Variación del capital</span>
+                    <strong id="rfVariacion">$0</strong>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- TABLA FINANCIERA -->
+        <section class="rf-panel">
+
+            <div class="rf-panel-titulo">
+                <div>
+                    <span>✦ CONTROL FINANCIERO</span>
+                    <h2>Registro financiero diario</h2>
+                    <p>
+                        Consulta los ingresos, gastos y resultados
+                        de cada día.
+                    </p>
+                </div>
+
+                <span class="rf-etiqueta" id="rfDias">0 días</span>
+            </div>
+
+            <div class="rf-tabla-scroll">
+
+                <table class="rf-tabla">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Ventas</th>
+                            <th>Intereses</th>
+                            <th>Costos</th>
+                            <th>Gastos</th>
+                            <th>Pérdidas</th>
+                            <th>Resultado</th>
+                            <th>Capital</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="rfTablaBody"></tbody>
+                </table>
+
+            </div>
+
+        </section>
+
+        <div class="rf-aviso">
+            ❄ Reportes de demostración. Se supone un costo de
+            mercancía del 68 % y gastos operativos del 5 %
+            de cada venta. Los intereses cobrados y las mermas
+            son registros ficticios adicionales.
+
+            El capital representa una estimación simplificada
+            y no equivale al efectivo disponible ni a un
+            balance contable real.
+        </div>
+
+    </div>
+</section>
+
+
+<!-- DATOS DE DJANGO -->
+{{ registros|json_script:"rfDatos" }}
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const registros = JSON.parse(
+        document.getElementById('rfDatos').textContent
+    );
+
+    const pagina = document.getElementById('rfPagina');
+    const botones = document.querySelectorAll('.rf-periodo');
+    const tabla = document.getElementById('rfTablaBody');
+    const grafico = document.getElementById('rfGrafico');
+
+    const hoy = Date.parse(
+        pagina.dataset.hoy + 'T00:00:00Z'
+    );
+
+    const capitalInicial = Number(pagina.dataset.capital);
+    const diaMs = 86400000;
+
+    let periodoActual = '7';
+
+    const campos = [
+        'ventas', 'costos', 'gastos', 'perdidas',
+        'intereses', 'cantidad', 'credito',
+        'contado', 'resultado'
+    ];
+
+
+    // FORMATO DE PESOS
+    function pesos(valor) {
+        const numero = Math.round(Number(valor) || 0);
+
+        return '$' + new Intl.NumberFormat('es-CO')
+            .format(numero);
+    }
+
+
+    function ponerTexto(id, valor) {
+        document.getElementById(id).textContent = valor;
+    }
+
+
+    function fechaNumero(fecha) {
+        return Date.parse(fecha + 'T00:00:00Z');
+    }
+
+
+    // FILTRAR LAS FECHAS SELECCIONADAS
+    function obtenerPeriodo(periodo) {
+
+        if (periodo === 'todas') {
+            return registros;
+        }
+
+        const dias = Number(periodo);
+        const desde = hoy - (dias - 1) * diaMs;
+
+        return registros.filter(function (registro) {
+            const fecha = fechaNumero(registro.fecha);
+
+            return fecha >= desde && fecha <= hoy;
+        });
+    }
+
+
+    // SUMAR TODOS LOS DATOS
+    function sumarRegistros(lista) {
+
+        const totales = {};
+
+        campos.forEach(function (campo) {
+            totales[campo] = 0;
+        });
+
+        lista.forEach(function (registro) {
+
+            campos.forEach(function (campo) {
+                totales[campo] += Number(registro[campo]) || 0;
+            });
+
+        });
+
+        return totales;
+    }
+
+
+    // CREAR GRÁFICA SVG
+    function dibujarGrafico(lista, capitalAntes) {
+
+        grafico.replaceChildren();
+
+        const svgNS = 'http://www.w3.org/2000/svg';
+
+        function crearSVG(tipo, atributos) {
+
+            const elemento = document.createElementNS(
+                svgNS, tipo
+            );
+
+            Object.entries(atributos).forEach(function (item) {
+                elemento.setAttribute(item[0], String(item[1]));
+            });
+
+            grafico.appendChild(elemento);
+
+            return elemento;
+        }
+
+        const valores = [
+            capitalAntes,
+            ...lista.map(function (r) {
+                return r.capital;
+            })
+        ];
+
+        if (valores.length < 2) {
+            valores.push(capitalAntes);
+        }
+
+        const minimo = Math.min(...valores);
+        const maximo = Math.max(...valores);
+
+        const margen = Math.max(
+            (maximo - minimo) * 0.15,
+            1000
+        );
+
+        const abajo = minimo - margen;
+        const arriba = maximo + margen;
+
+        const ancho = 850;
+        const alto = 165;
+        const izquierda = 25;
+        const superior = 20;
+
+        function coordenada(i, valor) {
+
+            const x = izquierda +
+                i * ancho / (valores.length - 1);
+
+            const y = superior + alto -
+                (valor - abajo) / (arriba - abajo) * alto;
+
+            return [x, y];
+        }
+
+        // LÍNEAS DE REFERENCIA
+        for (let i = 0; i < 4; i++) {
+
+            const y = 30 + i * 52;
+
+            crearSVG('line', {
+                x1: 25,
+                x2: 875,
+                y1: y,
+                y2: y,
+                stroke: '#E6EDE6',
+                'stroke-width': 1
+            });
+        }
+
+        const puntos = valores.map(function (valor, i) {
+            return coordenada(i, valor);
+        });
+
+        const camino = puntos.map(function (p, i) {
+            return (i === 0 ? 'M' : 'L') +
+                p[0].toFixed(2) + ' ' + p[1].toFixed(2);
+        }).join(' ');
+
+        // ÁREA DORADA SUAVE
+        const area = camino +
+            ' L875 200 L25 200 Z';
+
+        crearSVG('path', {
+            d: area,
+            fill: '#E9F2E7',
+            opacity: 0.85
+        });
+
+        // LÍNEA PRINCIPAL
+        crearSVG('path', {
+            d: camino,
+            fill: 'none',
+            stroke: '#B99A36',
+            'stroke-width': 4,
+            'stroke-linejoin': 'round',
+            'stroke-linecap': 'round'
+        });
+
+        // ÚLTIMO PUNTO
+        const ultimo = puntos[puntos.length - 1];
+
+        crearSVG('circle', {
+            cx: ultimo[0],
+            cy: ultimo[1],
+            r: 7,
+            fill: '#194B3C',
+            stroke: '#FFFFFF',
+            'stroke-width': 3
+        });
+    }
+
+
+    // CREAR LA TABLA DIARIA
+    function actualizarTabla(lista) {
+
+        const fragmento = document.createDocumentFragment();
+
+        const filas = [...lista].reverse();
+
+        filas.forEach(function (registro) {
+
+            const fila = document.createElement('tr');
+
+            const columnas = [
+                registro.fecha_texto,
+                pesos(registro.ventas),
+                pesos(registro.intereses),
+                pesos(registro.costos),
+                pesos(registro.gastos),
+                pesos(registro.perdidas),
+                pesos(registro.resultado),
+                pesos(registro.capital)
+            ];
+
+            columnas.forEach(function (valor, indice) {
+
+                const celda = document.createElement('td');
+                celda.textContent = valor;
+
+                if (indice === 6) {
+
+                    celda.className =
+                        registro.resultado < 0
+                        ? 'rf-negativo'
+                        : registro.resultado > 0
+                        ? 'rf-positivo'
+                        : '';
+
+                }
+
+                fila.appendChild(celda);
+            });
+
+            fragmento.appendChild(fila);
+        });
+
+        tabla.replaceChildren(fragmento);
+
+        ponerTexto(
+            'rfDias',
+            lista.length + ' días'
+        );
+    }
+
+
+    // COMPARAR CON EL PERIODO ANTERIOR
+    function actualizarComparacion(resultadoActual) {
+
+        const contenedor = document.getElementById(
+            'rfComparacion'
+        );
+
+        if (periodoActual === 'todas') {
+            contenedor.textContent =
+                'Mostrando toda la evolución histórica simulada.';
+            return;
+        }
+
+        const dias = Number(periodoActual);
+
+        const finAnterior = hoy - dias * diaMs;
+
+        const inicioAnterior =
+            finAnterior - (dias - 1) * diaMs;
+
+        const registrosAnteriores = registros.filter(
+            function (registro) {
+
+                const fecha = fechaNumero(registro.fecha);
+
+                return fecha >= inicioAnterior &&
+                       fecha <= finAnterior;
+            }
+        );
+
+        const anterior = sumarRegistros(
+            registrosAnteriores
+        );
+
+        const diferencia =
+            resultadoActual - anterior.resultado;
+
+        if (diferencia > 0) {
+
+            contenedor.textContent =
+                '↗ El resultado mejoró ' +
+                pesos(diferencia) +
+                ' frente al periodo anterior.';
+
+        } else if (diferencia < 0) {
+
+            contenedor.textContent =
+                '↘ El resultado disminuyó ' +
+                pesos(Math.abs(diferencia)) +
+                ' frente al periodo anterior.';
+
+        } else {
+
+            contenedor.textContent =
+                'El resultado se mantuvo igual al periodo anterior.';
+        }
+    }
+
+
+    // ACTUALIZAR TODO EL DASHBOARD
+    function actualizarReporte() {
+
+        const lista = obtenerPeriodo(periodoActual);
+        const totales = sumarRegistros(lista);
+
+        const antes = lista.length
+            ? lista[0].capital - lista[0].resultado
+            : capitalInicial;
+
+        const cierre = lista.length
+            ? lista[lista.length - 1].capital
+            : capitalInicial;
+
+        ponerTexto('rfVentas', pesos(totales.ventas));
+        ponerTexto('rfIntereses', pesos(totales.intereses));
+        ponerTexto('rfPerdidas', pesos(totales.perdidas));
+        ponerTexto('rfCapital', pesos(cierre));
+        ponerTexto('rfResultado', pesos(totales.resultado));
+
+        ponerTexto(
+            'rfEgresos',
+            pesos(totales.costos + totales.gastos)
+        );
+
+        ponerTexto(
+            'rfCantidad',
+            totales.cantidad + ' operaciones'
+        );
+
+        ponerTexto('rfContado', pesos(totales.contado));
+        ponerTexto('rfCredito', pesos(totales.credito));
+        ponerTexto('rfCostos', pesos(totales.costos));
+        ponerTexto('rfGastos', pesos(totales.gastos));
+        ponerTexto('rfVariacion', pesos(totales.resultado));
+
+        ponerTexto('rfCapitalInicio', pesos(antes));
+        ponerTexto('rfCapitalFin', pesos(cierre));
+
+        const etiquetas = {
+            '1': 'Hoy',
+            '7': 'Últimos 7 días',
+            '30': 'Últimos 30 días',
+            '365': 'Últimos 365 días',
+            'todas': 'Todo el historial'
+        };
+
+        ponerTexto(
+            'rfRango',
+            etiquetas[periodoActual] +
+            ' · Corte: ' + pagina.dataset.hoy
+        );
+
+        const resultado = document.getElementById(
+            'rfResultado'
+        );
+
+        resultado.classList.toggle(
+            'rf-negativo',
+            totales.resultado < 0
+        );
+
+        resultado.classList.toggle(
+            'rf-positivo',
+            totales.resultado > 0
+        );
+
+        dibujarGrafico(lista, antes);
+        actualizarTabla(lista);
+        actualizarComparacion(totales.resultado);
+    }
+
+
+    // BOTONES DE FILTRO
+    botones.forEach(function (boton) {
+
+        boton.addEventListener('click', function () {
+
+            periodoActual = boton.dataset.periodo;
+
+            botones.forEach(function (otro) {
+                otro.classList.remove('activo');
+                otro.setAttribute('aria-pressed', 'false');
+            });
+
+            boton.classList.add('activo');
+            boton.setAttribute('aria-pressed', 'true');
+
+            actualizarReporte();
+
+        });
+
+    });
+
+    actualizarReporte();
+
+});
+</script>
+
+{% endblock %}

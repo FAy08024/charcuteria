@@ -1,0 +1,329 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Facturas | Charcutería{% endblock %}
+
+{% block content %}
+
+<section class="fac-pagina">
+
+    <div class="fac-contenedor">
+
+        <!-- ENCABEZADO -->
+        <div class="fac-banner">
+            <div>
+                <span class="fac-etiqueta">
+                    ✦ SISTEMA DE GESTIÓN ✦
+                </span>
+
+                <h1>Facturas del día</h1>
+
+                <p>
+                    Consulta las compras y facturas
+                    registradas en nuestra charcutería.
+                </p>
+            </div>
+
+            <div class="fac-banner-derecha">
+                <span class="fac-copo" aria-hidden="true">❄</span>
+                <span>{{ fecha_hoy|date:"d/m/Y" }}</span>
+            </div>
+        </div>
+
+        <div class="fac-navegacion">
+            <a href="{% url 'panel_usuario' %}">
+                ← Volver al panel
+            </a>
+
+            <span>DATOS DE DEMOSTRACIÓN</span>
+        </div>
+
+        <!-- DISEÑO 40% CLIENTES / 60% FACTURAS -->
+        <div class="fac-distribucion">
+
+            <!-- IZQUIERDA: CLIENTES -->
+            <aside class="fac-clientes">
+
+                <div class="fac-titulo">
+                    <h2>Clientes</h2>
+                    <p>Selecciona un cliente</p>
+                </div>
+
+                <button type="button"
+                        class="fac-cliente seleccionado"
+                        data-cliente="todos"
+                        data-nombre="Todos los clientes"
+                        aria-pressed="true">
+
+                    <div class="fac-avatar fac-avatar-todos">
+                        <span>👥</span>
+                    </div>
+
+                    <div class="fac-cliente-info">
+                        <strong>Todos los clientes</strong>
+                        <small>Ver todas las facturas</small>
+                    </div>
+
+                    <span class="fac-indicador">›</span>
+                </button>
+
+                {% for cliente in clientes %}
+
+                <button type="button"
+                        class="fac-cliente"
+                        data-cliente="{{ cliente.id }}"
+                        data-nombre="{{ cliente.nombre }}"
+                        aria-pressed="false">
+
+                    <div class="fac-avatar">
+
+                        {% if cliente.foto %}
+                            <img src="{% static cliente.foto %}"
+                                 alt="Foto de {{ cliente.nombre }}">
+                        {% else %}
+                            <span>{{ cliente.iniciales }}</span>
+                        {% endif %}
+
+                    </div>
+
+                    <div class="fac-cliente-info">
+                        <strong>{{ cliente.nombre }}</strong>
+                        <small>
+                            {{ cliente.codigo }} · {{ cliente.tipo }}
+                        </small>
+                    </div>
+
+                    <span class="fac-indicador">›</span>
+
+                </button>
+
+                {% endfor %}
+
+                <div class="fac-clientes-pie">
+                    Clientes de demostración
+                </div>
+
+            </aside>
+
+            <!-- DERECHA: FACTURAS -->
+            <div class="fac-facturas">
+
+                <div class="fac-facturas-encabezado">
+
+                    <div>
+                        <h2 id="facNombreSeleccionado">
+                            Todas las facturas
+                        </h2>
+
+                        <p>
+                            <span id="facContador">
+                                {{ facturas|length }}
+                            </span>
+                            facturas encontradas
+                        </p>
+                    </div>
+
+                    <div class="fac-icono-factura" aria-hidden="true">
+                        🧾
+                    </div>
+
+                </div>
+
+                <!-- BUSCADOR -->
+                <div class="fac-buscar">
+                    <label for="facBuscador">
+                        Buscar factura
+                    </label>
+
+                    <input
+                        type="search"
+                        id="facBuscador"
+                        placeholder="Número, cliente o tipo..."
+                        autocomplete="off">
+                </div>
+
+                <!-- LISTA -->
+                <div class="fac-lista" id="facLista">
+
+                    {% for factura in facturas %}
+
+                    <article class="fac-factura"
+                             data-cliente="{{ factura.cliente_id }}"
+                             data-busqueda="{{ factura.numero|lower }} {{ factura.cliente|lower }} {{ factura.tipo|lower }}">
+
+                        <details>
+
+                            <summary class="fac-factura-resumen">
+
+                                <div class="fac-factura-principal">
+
+                                    <div class="fac-factura-icono">
+                                        🧾
+                                    </div>
+
+                                    <div class="fac-factura-texto">
+                                        <strong>
+                                            {{ factura.numero }}
+                                        </strong>
+
+                                        <small>
+                                            {{ factura.cliente }}
+                                        </small>
+
+                                        <small>
+                                            {{ factura.hora }}
+                                        </small>
+                                    </div>
+
+                                </div>
+
+                                <div class="fac-factura-importe">
+
+                                    <strong>
+                                        {{ factura.total }}
+                                    </strong>
+
+                                    <span class="{% if factura.estado == 'Pagada' %}fac-pagada{% else %}fac-pendiente{% endif %}">
+                                        {{ factura.estado }}
+                                    </span>
+
+                                    <small>
+                                        {{ factura.tipo }}
+                                    </small>
+
+                                </div>
+
+                            </summary>
+
+                            <!-- DETALLE DE FACTURA -->
+                            <div class="fac-factura-detalle">
+
+                                <h3>Detalle de la factura</h3>
+
+                                <div class="fac-detalle-productos">
+
+                                    {% for producto in factura.productos %}
+
+                                    <div class="fac-producto">
+                                        <span>{{ producto.nombre }}</span>
+                                        <strong>
+                                            Cantidad: {{ producto.cantidad }}
+                                        </strong>
+                                    </div>
+
+                                    {% endfor %}
+
+                                </div>
+
+                                <div class="fac-detalle-total">
+
+                                    <span>Total de la factura</span>
+
+                                    <strong>
+                                        {{ factura.total }}
+                                    </strong>
+
+                                </div>
+
+                                <p class="fac-detalle-nota">
+                                    Factura ficticia para probar
+                                    el diseño del sistema.
+                                </p>
+
+                            </div>
+
+                        </details>
+
+                    </article>
+
+                    {% endfor %}
+
+                </div>
+
+                <div id="facSinResultados"
+                     class="fac-sin-resultados"
+                     hidden>
+                    No se encontraron facturas.
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- FILTROS INTERACTIVOS -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const botones = document.querySelectorAll('.fac-cliente');
+    const facturas = document.querySelectorAll('.fac-factura');
+    const buscador = document.getElementById('facBuscador');
+    const contador = document.getElementById('facContador');
+    const titulo = document.getElementById('facNombreSeleccionado');
+    const sinResultados = document.getElementById('facSinResultados');
+
+    let clienteActual = 'todos';
+
+    function filtrarFacturas() {
+
+        const texto = buscador.value.toLowerCase().trim();
+        let total = 0;
+
+        facturas.forEach(function (factura) {
+
+            const coincideCliente =
+                clienteActual === 'todos' ||
+                factura.dataset.cliente === clienteActual;
+
+            const coincideBusqueda =
+                factura.dataset.busqueda.includes(texto);
+
+            const mostrar = coincideCliente && coincideBusqueda;
+
+            factura.hidden = !mostrar;
+
+            if (mostrar) {
+                total++;
+            }
+
+        });
+
+        contador.textContent = total;
+        sinResultados.hidden = total > 0;
+    }
+
+    botones.forEach(function (boton) {
+
+        boton.addEventListener('click', function () {
+
+            clienteActual = boton.dataset.cliente;
+
+            botones.forEach(function (otro) {
+                otro.classList.remove('seleccionado');
+                otro.setAttribute('aria-pressed', 'false');
+            });
+
+            boton.classList.add('seleccionado');
+            boton.setAttribute('aria-pressed', 'true');
+
+            titulo.textContent = clienteActual === 'todos'
+                ? 'Todas las facturas'
+                : boton.dataset.nombre;
+
+            filtrarFacturas();
+
+        });
+
+    });
+
+    buscador.addEventListener('input', filtrarFacturas);
+
+});
+</script>
+
+{% endblock %}

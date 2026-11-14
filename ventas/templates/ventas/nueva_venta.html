@@ -1,0 +1,511 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nueva venta | Charcutería{% endblock %}
+
+{% block content %}
+<!-- CARGAR ESTILOS DE NUEVA VENTA -->
+<link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=3">
+<section class="nv-pagina">
+    <div class="nv-contenedor">
+
+        <!-- ENCABEZADO NAVIDEÑO -->
+        <header class="nv-banner">
+            <div>
+                <span>✦ CHARCUTERÍA · PUNTO DE VENTA ✦</span>
+                <h1>Registrar nueva venta</h1>
+                <p>Elige los productos y registra la compra.</p>
+            </div>
+            <div class="nv-banner-copo">❄</div>
+        </header>
+
+        <nav class="nv-regreso">
+            <a href="{% url 'panel_usuario' %}">
+                ← Volver al panel
+            </a>
+            <span>REGISTRO DE DEMOSTRACIÓN</span>
+        </nav>
+
+        <!-- MENSAJES -->
+        {% if messages %}
+            {% for message in messages %}
+                <p class="nv-mensaje">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+
+        {% if error %}
+            <p class="nv-error" role="alert">{{ error }}</p>
+        {% endif %}
+
+        <div class="nv-layout">
+
+            <!-- CATÁLOGO -->
+            <section class="nv-panel">
+
+                <div class="nv-seccion-titulo">
+                    <span>✦ NUESTROS PRODUCTOS</span>
+                    <h2>Selecciona los productos</h2>
+                    <p>Agrega al carrito lo que el cliente desea comprar.</p>
+                </div>
+
+                <label class="nv-label" for="nvBuscar">
+                    Buscar producto
+                </label>
+
+                <input type="search"
+                       id="nvBuscar"
+                       class="nv-input"
+                       placeholder="Jamón, queso, chorizo, combos...">
+
+                <div class="nv-catalogo">
+
+                    {% for producto in catalogo %}
+
+                    <button type="button"
+                            class="nv-producto"
+                            data-id="{{ producto.id }}"
+                            data-busqueda="{{ producto.nombre|lower }} {{ producto.categoria|lower }}">
+
+                        <div class="nv-producto-imagen">
+
+                            {% if producto.imagen %}
+                                <img src="{{ producto.imagen }}"
+                                     alt="{{ producto.nombre }}"
+                                     loading="lazy">
+                            {% else %}
+                                <span>{{ producto.icono }}</span>
+                            {% endif %}
+
+                        </div>
+
+                        <div class="nv-producto-texto">
+                            <small>{{ producto.categoria }}</small>
+                            <strong>{{ producto.nombre }}</strong>
+
+                            <span class="nv-precio"
+                                  data-precio="{{ producto.precio }}">
+                            </span>
+
+                            {% if producto.descuento %}
+                                <em>
+                                    {{ producto.descuento }}% de descuento
+                                </em>
+                            {% endif %}
+                        </div>
+
+                        <span class="nv-mas">+</span>
+
+                    </button>
+
+                    {% endfor %}
+
+                </div>
+
+                <p class="nv-vacio" id="nvSinProductos" hidden>
+                    No se encontraron productos.
+                </p>
+
+            </section>
+
+            <!-- CAJA REGISTRADORA -->
+            <aside class="nv-panel nv-caja">
+
+                <div class="nv-seccion-titulo">
+                    <span>✦ RESUMEN DE COMPRA</span>
+                    <h2>Caja registradora</h2>
+                    <p>Revisa los detalles antes de guardar.</p>
+                </div>
+
+                <form method="post"
+                      action="{% url 'nueva_venta' %}"
+                      id="nvFormulario">
+
+                    {% csrf_token %}
+
+                    <!-- CLIENTE -->
+                    <label class="nv-label" for="nvCliente">
+                        Cliente
+                    </label>
+
+                    <select id="nvCliente"
+                            name="cliente_id"
+                            class="nv-input">
+
+                        <option value="">
+                            Cliente ocasional
+                        </option>
+
+                        {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}">
+                                {{ cliente.nombre }} · {{ cliente.codigo }}
+                            </option>
+                        {% endfor %}
+
+                    </select>
+
+                    <div id="nvOcasionalBloque">
+
+                        <label class="nv-label" for="nvOcasional">
+                            Nombre opcional del cliente
+                        </label>
+
+                        <input type="text"
+                               id="nvOcasional"
+                               name="cliente_ocasional"
+                               class="nv-input"
+                               maxlength="120"
+                               placeholder="Cliente ocasional">
+
+                    </div>
+
+                    <!-- TIPO DE VENTA -->
+                    <label class="nv-label" for="nvTipo">
+                        Tipo de venta
+                    </label>
+
+                    <select id="nvTipo"
+                            name="tipo"
+                            class="nv-input">
+
+                        <option value="Contado">Contado</option>
+                        <option value="Crédito">Crédito</option>
+
+                    </select>
+
+                    <!-- MÉTODO DE PAGO -->
+                    <div id="nvPagoBloque">
+
+                        <label class="nv-label" for="nvPago">
+                            Método de pago
+                        </label>
+
+                        <select id="nvPago"
+                                name="metodo_pago"
+                                class="nv-input">
+
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Transferencia">Transferencia</option>
+                            <option value="Tarjeta">Tarjeta</option>
+
+                        </select>
+
+                    </div>
+
+                    <p class="nv-nota" id="nvAvisoCredito" hidden>
+                        Para una venta a crédito debes seleccionar
+                        un cliente registrado. La operación quedará
+                        pendiente, pero todavía no generará una
+                        deuda automáticamente.
+                    </p>
+
+                    <!-- PRODUCTOS DEL CARRITO -->
+                    <div class="nv-carrito-titulo">
+                        <h3>Productos agregados</h3>
+                        <span id="nvConteo">0 unidades</span>
+                    </div>
+
+                    <div class="nv-carrito" id="nvCarrito">
+                        <p class="nv-vacio-carrito">
+                            Agrega productos desde el catálogo.
+                        </p>
+                    </div>
+
+                    <!-- TOTAL -->
+                    <div class="nv-total">
+                        <span>TOTAL DE LA VENTA</span>
+                        <strong id="nvTotal">$0</strong>
+                    </div>
+
+                    <input type="hidden"
+                           name="items_json"
+                           id="nvItems"
+                           value="[]">
+
+                    <button type="submit"
+                            class="nv-guardar"
+                            id="nvGuardar"
+                            disabled>
+                        ✓ Registrar venta
+                    </button>
+
+                    <p class="nv-pie-caja">
+                        La información se guardará en SQLite.
+                    </p>
+
+                </form>
+
+            </aside>
+
+        </div>
+
+        <!-- VENTAS RECIENTES -->
+        <section class="nv-panel nv-recientes">
+
+            <div class="nv-seccion-titulo">
+                <span>✦ OPERACIONES REGISTRADAS ✦</span>
+                <h2>Últimas ventas guardadas</h2>
+                <p>
+                    Estas compras también aparecen
+                    en el historial del administrador.
+                </p>
+            </div>
+
+            {% for venta in ventas_recientes %}
+
+                <div class="nv-reciente-fila">
+
+                    <strong>{{ venta.numero }}</strong>
+
+                    <span>{{ venta.cliente_nombre }}</span>
+
+                    <span>
+                        {{ venta.fecha|date:'d/m/Y H:i' }}
+                    </span>
+
+                    <span>{{ venta.estado }}</span>
+
+                    <strong class="nv-reciente-total">
+                        ${{ venta.total }}
+                    </strong>
+
+                </div>
+
+            {% empty %}
+
+                <p class="nv-vacio">
+                    Todavía no se han registrado ventas.
+                </p>
+
+            {% endfor %}
+
+        </section>
+
+    </div>
+</section>
+
+
+<!-- DATOS DEL CATÁLOGO -->
+{{ catalogo|json_script:"nvCatalogoDatos" }}
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const catalogo = JSON.parse(
+        document.getElementById('nvCatalogoDatos').textContent
+    );
+
+    const productos = new Map(
+        catalogo.map(p => [p.id, p])
+    );
+
+    const carrito = new Map();
+
+    const buscar = document.getElementById('nvBuscar');
+    const tarjetas = document.querySelectorAll('.nv-producto');
+    const cliente = document.getElementById('nvCliente');
+    const tipo = document.getElementById('nvTipo');
+    const pagoBloque = document.getElementById('nvPagoBloque');
+    const ocasional = document.getElementById('nvOcasionalBloque');
+    const avisoCredito = document.getElementById('nvAvisoCredito');
+
+    const carritoLista = document.getElementById('nvCarrito');
+    const totalElemento = document.getElementById('nvTotal');
+    const conteo = document.getElementById('nvConteo');
+    const itemsInput = document.getElementById('nvItems');
+    const guardar = document.getElementById('nvGuardar');
+    const formulario = document.getElementById('nvFormulario');
+
+    function pesos(valor) {
+        return '$' + new Intl.NumberFormat('es-CO')
+            .format(valor);
+    }
+
+    // MOSTRAR PRECIOS
+    document.querySelectorAll('.nv-precio')
+        .forEach(function (elemento) {
+
+            elemento.textContent = pesos(
+                Number(elemento.dataset.precio)
+            );
+
+        });
+
+    // MOSTRAR CAMPOS SEGÚN TIPO DE COMPRA
+    function actualizarTipo() {
+
+        const credito = tipo.value === 'Crédito';
+
+        pagoBloque.hidden = credito;
+        avisoCredito.hidden = !credito;
+
+        ocasional.hidden = cliente.value !== '';
+    }
+
+    // CAMBIAR CANTIDAD DE PRODUCTOS
+    function cambiarCantidad(id, diferencia) {
+
+        const actual = carrito.get(id) || 0;
+        const nuevo = actual + diferencia;
+
+        if (nuevo <= 0) {
+            carrito.delete(id);
+        } else {
+            carrito.set(id, Math.min(nuevo, 100));
+        }
+
+        actualizarCarrito();
+    }
+
+    // CREAR BOTONES + Y -
+    function crearBoton(texto, id, cambio) {
+
+        const boton = document.createElement('button');
+
+        boton.type = 'button';
+        boton.className = 'nv-cantidad-boton';
+        boton.textContent = texto;
+
+        boton.addEventListener('click', function () {
+            cambiarCantidad(id, cambio);
+        });
+
+        return boton;
+    }
+
+    // ACTUALIZAR CARRITO
+    function actualizarCarrito() {
+
+        carritoLista.replaceChildren();
+
+        let total = 0;
+        let unidades = 0;
+        const items = [];
+
+        carrito.forEach(function (cantidad, id) {
+
+            const producto = productos.get(id);
+
+            if (!producto) return;
+
+            const subtotal = producto.precio * cantidad;
+
+            total += subtotal;
+            unidades += cantidad;
+
+            items.push({
+                id: id,
+                cantidad: cantidad
+            });
+
+            const fila = document.createElement('div');
+            fila.className = 'nv-item';
+
+            const info = document.createElement('div');
+            info.className = 'nv-item-info';
+
+            const nombre = document.createElement('strong');
+            nombre.textContent = producto.nombre;
+
+            const valor = document.createElement('small');
+            valor.textContent = pesos(subtotal);
+
+            info.append(nombre, valor);
+
+            const controles = document.createElement('div');
+            controles.className = 'nv-controles';
+
+            const menos = crearBoton('−', id, -1);
+            const mas = crearBoton('+', id, 1);
+
+            const numero = document.createElement('span');
+            numero.textContent = cantidad;
+
+            controles.append(menos, numero, mas);
+
+            fila.append(info, controles);
+
+            carritoLista.appendChild(fila);
+        });
+
+        if (!items.length) {
+
+            const mensaje = document.createElement('p');
+
+            mensaje.className = 'nv-vacio-carrito';
+            mensaje.textContent = 'Agrega productos al carrito.';
+
+            carritoLista.appendChild(mensaje);
+        }
+
+        totalElemento.textContent = pesos(total);
+        conteo.textContent = unidades + ' unidades';
+
+        itemsInput.value = JSON.stringify(items);
+        guardar.disabled = items.length === 0;
+    }
+
+    // AGREGAR PRODUCTOS
+    tarjetas.forEach(function (tarjeta) {
+
+        tarjeta.addEventListener('click', function () {
+
+            const id = Number(tarjeta.dataset.id);
+
+            cambiarCantidad(id, 1);
+        });
+
+    });
+
+    // BUSCAR PRODUCTOS
+    buscar.addEventListener('input', function () {
+
+        const texto = buscar.value.toLowerCase().trim();
+        let visibles = 0;
+
+        tarjetas.forEach(function (tarjeta) {
+
+            const coincide = tarjeta.dataset.busqueda.includes(texto);
+
+            tarjeta.hidden = !coincide;
+
+            if (coincide) visibles++;
+        });
+
+        document.getElementById(
+            'nvSinProductos'
+        ).hidden = visibles > 0;
+    });
+
+    tipo.addEventListener('change', actualizarTipo);
+    cliente.addEventListener('change', actualizarTipo);
+
+    // VALIDAR ANTES DE GUARDAR
+    formulario.addEventListener('submit', function (evento) {
+
+        if (!carrito.size) {
+
+            evento.preventDefault();
+            alert('Agrega al menos un producto.');
+            return;
+        }
+
+        if (tipo.value === 'Crédito' && cliente.value === '') {
+
+            evento.preventDefault();
+            alert('Selecciona un cliente registrado.');
+            return;
+        }
+
+        guardar.disabled = true;
+        guardar.textContent = 'Guardando venta...';
+    });
+
+    actualizarTipo();
+    actualizarCarrito();
+
+});
+</script>
+
+{% endblock %}

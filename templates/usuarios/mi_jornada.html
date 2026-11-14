@@ -1,0 +1,387 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mi jornada | Charcutería{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet"
+      href="{% static 'css/estilos.css' %}?v=11">
+
+<main class="mj-pagina">
+
+    <div class="mj-contenedor">
+
+        <!-- ENCABEZADO -->
+        <header class="mj-banner">
+
+            <div>
+                <span>✦ CHARCUTERÍA · CONTROL DE JORNADA ✦</span>
+
+                <h1>Mi jornada</h1>
+
+                <p>
+                    Consulta tus operaciones, ventas
+                    y abonos registrados.
+                </p>
+
+                <small>
+                    Sesión: {{ request.user.username }}
+                </small>
+            </div>
+
+            <div class="mj-banner-icono">🕒</div>
+
+        </header>
+
+        <!-- NAVEGACIÓN -->
+        <nav class="mj-navegacion">
+
+            <a href="{% url 'panel_empleado' %}">
+                ← Volver al panel
+            </a>
+
+            <span>HISTORIAL PERSONAL</span>
+
+        </nav>
+
+        <!-- RESUMEN DE JORNADA -->
+        <section class="mj-estadisticas">
+
+            <article class="mj-estadistica">
+
+                <div class="mj-estadistica-icono">🛒</div>
+
+                <span>Mis ventas</span>
+
+                <strong>{{ total_ventas }}</strong>
+
+                <small>Operaciones registradas</small>
+
+            </article>
+
+            <article class="mj-estadistica">
+
+                <div class="mj-estadistica-icono">💳</div>
+
+                <span>Mis abonos</span>
+
+                <strong>{{ total_abonos }}</strong>
+
+                <small>Pagos recibidos</small>
+
+            </article>
+
+            <article class="mj-estadistica mj-estadistica-destacada">
+
+                <div class="mj-estadistica-icono">💰</div>
+
+                <span>Total recaudado</span>
+
+                <strong>{{ total_recaudado }}</strong>
+
+                <small>
+                    Ventas de contado y abonos cobrados
+                </small>
+
+            </article>
+
+        </section>
+
+        <!-- DESGLOSE DE RECAUDO -->
+        <section class="mj-desglose">
+
+            <div>
+                <span>Ventas de contado</span>
+                <strong>{{ recaudado_ventas }}</strong>
+            </div>
+
+            <div>
+                <span>Abonos recibidos</span>
+                <strong>{{ recaudado_abonos }}</strong>
+            </div>
+
+        </section>
+
+        <!-- HISTORIAL -->
+        <section class="mj-panel">
+
+            <div class="mj-titulo">
+
+                <div>
+                    <small>✦ MIS OPERACIONES ✦</small>
+                    <h2>Historial de movimientos</h2>
+                    <p>
+                        Aquí aparecen solamente los movimientos
+                        que tú has registrado.
+                    </p>
+                </div>
+
+                <span class="mj-contador">
+                    {{ movimientos|length }} resultados
+                </span>
+
+            </div>
+
+            <!-- FILTROS -->
+            <form method="get"
+                  action="{% url 'mi_jornada' %}"
+                  class="mj-filtros">
+
+                <div>
+                    <label for="mjPeriodo">Período</label>
+
+                    <select name="periodo"
+                            id="mjPeriodo"
+                            class="mj-input">
+
+                        <option value="hoy"
+                                {% if periodo == 'hoy' %}selected{% endif %}>
+                            Hoy
+                        </option>
+
+                        <option value="ayer"
+                                {% if periodo == 'ayer' %}selected{% endif %}>
+                            Ayer
+                        </option>
+
+                        <option value="7dias"
+                                {% if periodo == '7dias' %}selected{% endif %}>
+                            Últimos 7 días
+                        </option>
+
+                        <option value="todos"
+                                {% if periodo == 'todos' %}selected{% endif %}>
+                            Todo mi historial
+                        </option>
+
+                    </select>
+                </div>
+
+                <div>
+                    <label for="mjTipo">Movimiento</label>
+
+                    <select name="tipo"
+                            id="mjTipo"
+                            class="mj-input">
+
+                        <option value="todos"
+                                {% if tipo == 'todos' %}selected{% endif %}>
+                            Todos
+                        </option>
+
+                        <option value="ventas"
+                                {% if tipo == 'ventas' %}selected{% endif %}>
+                            Ventas
+                        </option>
+
+                        <option value="abonos"
+                                {% if tipo == 'abonos' %}selected{% endif %}>
+                            Abonos
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="mj-busqueda">
+                    <label for="mjBuscar">Buscar</label>
+
+                    <input type="search"
+                           name="q"
+                           id="mjBuscar"
+                           class="mj-input"
+                           value="{{ busqueda }}"
+                           placeholder="Cliente, número o cuenta...">
+                </div>
+
+                <button type="submit" class="mj-filtrar">
+                    Buscar
+                </button>
+
+            </form>
+
+            <!-- MOVIMIENTOS -->
+            <div class="mj-lista">
+
+                {% for movimiento in movimientos %}
+
+                    <article class="mj-movimiento">
+
+                        <div class="mj-movimiento-cabecera">
+
+                            <div class="mj-movimiento-identidad">
+
+                                <div class="mj-movimiento-icono">
+                                    {% if movimiento.tipo == 'venta' %}
+                                        🛒
+                                    {% else %}
+                                        💳
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <strong>
+                                        {{ movimiento.numero }}
+                                    </strong>
+
+                                    <small>
+                                        {{ movimiento.descripcion }}
+                                    </small>
+                                </div>
+
+                            </div>
+
+                            <div class="mj-movimiento-valor">
+
+                                <strong>
+                                    {{ movimiento.monto_formato }}
+                                </strong>
+
+                                <span>
+                                    {{ movimiento.estado }}
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="mj-movimiento-datos">
+
+                            <div>
+                                <span>Cliente</span>
+                                <strong>{{ movimiento.cliente }}</strong>
+                            </div>
+
+                            <div>
+                                <span>Fecha y hora</span>
+                                <strong>
+                                    {{ movimiento.fecha|date:'d/m/Y H:i' }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Método de pago</span>
+                                <strong>{{ movimiento.metodo }}</strong>
+                            </div>
+
+                        </div>
+
+                        <details class="mj-detalle">
+
+                            <summary>
+                                Ver detalles del movimiento
+                            </summary>
+
+                            {% if movimiento.tipo == 'venta' %}
+
+                                <div class="mj-detalle-contenido">
+
+                                    <h4>Productos vendidos</h4>
+
+                                    {% for producto in movimiento.detalles %}
+
+                                        <div class="mj-producto-fila">
+
+                                            <span>
+                                                {{ producto.nombre }}
+                                                × {{ producto.cantidad }}
+                                            </span>
+
+                                            <strong>
+                                                {{ producto.importe_formato }}
+                                            </strong>
+
+                                        </div>
+
+                                    {% empty %}
+
+                                        <p>
+                                            No hay productos asociados.
+                                        </p>
+
+                                    {% endfor %}
+
+                                    {% if movimiento.estado == 'Pendiente' %}
+
+                                        <p class="mj-nota">
+                                            Esta venta a crédito todavía
+                                            no se ha cobrado completamente.
+                                        </p>
+
+                                    {% endif %}
+
+                                </div>
+
+                            {% else %}
+
+                                <div class="mj-detalle-contenido">
+
+                                    <h4>Información del abono</h4>
+
+                                    <p>
+                                        Cuenta:
+                                        <strong>
+                                            {{ movimiento.cuenta_numero }}
+                                        </strong>
+                                    </p>
+
+                                    <p>
+                                        Valor recibido:
+                                        <strong>
+                                            {{ movimiento.monto_formato }}
+                                        </strong>
+                                    </p>
+
+                                    <p>
+                                        Estado:
+                                        <strong>Recibido</strong>
+                                    </p>
+
+                                </div>
+
+                            {% endif %}
+
+                        </details>
+
+                    </article>
+
+                {% empty %}
+
+                    <div class="mj-sin-movimientos">
+
+                        <div>📋</div>
+
+                        <h3>No hay movimientos para mostrar</h3>
+
+                        <p>
+                            Todavía no tienes operaciones
+                            registradas con estos filtros.
+                        </p>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+        <!-- ACCESOS DIRECTOS -->
+        <section class="mj-accesos">
+
+            <a href="{% url 'nueva_venta' %}">
+                🛒 Registrar nueva venta
+            </a>
+
+            <a href="{% url 'registrar_abono' %}">
+                💳 Registrar abono
+            </a>
+
+        </section>
+
+    </div>
+
+</main>
+
+{% endblock %}

@@ -1,0 +1,236 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Resumen del día | Charcutería{% endblock %}
+
+{% block content %}
+
+<section class="rd-pagina">
+
+    <div class="rd-contenedor">
+
+        <header class="rd-banner">
+
+            <small>✦ CHARCUTERÍA · CONTROL DE JORNADA ✦</small>
+
+            <h1>📋 Resumen del día</h1>
+
+            <p>
+                Consulta todas las operaciones realizadas
+                durante tus turnos de trabajo.
+            </p>
+
+            <span>Empleado: {{ request.user.username }}</span>
+
+        </header>
+
+        <a href="{% url 'panel_empleado' %}"
+           class="rd-volver">
+            ← Volver al panel del empleado
+        </a>
+
+        {% if turno %}
+
+            <div class="rd-panel">
+
+                <h2>Mis turnos</h2>
+
+                <div class="rd-turnos">
+
+                    {% for item in turnos %}
+
+                        <a href="?turno={{ item.id }}"
+                           class="rd-turno {% if item.id == turno.id %}rd-activo{% endif %}">
+
+                            <strong>Turno #{{ item.id }}</strong>
+
+                            <span>
+                                {{ item.inicio|date:"d/m/Y" }}
+                            </span>
+
+                            {% if item.fin %}
+                                <small>Finalizado</small>
+                            {% else %}
+                                <small>En curso</small>
+                            {% endif %}
+
+                        </a>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <div class="rd-panel">
+
+                <div class="rd-cabecera">
+
+                    <div>
+                        <small>✦ INFORME DE JORNADA ✦</small>
+
+                        <h2>Turno #{{ turno.id }}</h2>
+                    </div>
+
+                    {% if turno.fin %}
+                        <span class="rd-estado">
+                            ✅ Finalizado
+                        </span>
+                    {% else %}
+                        <span class="rd-estado rd-abierto">
+                            🟢 En curso
+                        </span>
+                    {% endif %}
+
+                </div>
+
+                <div class="rd-horarios">
+
+                    <p>
+                        <strong>Inicio:</strong>
+                        {{ turno.inicio|date:"d/m/Y h:i A" }}
+                    </p>
+
+                    <p>
+                        <strong>Finalización:</strong>
+
+                        {% if turno.fin %}
+                            {{ turno.fin|date:"d/m/Y h:i A" }}
+                        {% else %}
+                            Todavía no finaliza
+                        {% endif %}
+                    </p>
+
+                </div>
+
+                <div class="rd-estadisticas">
+
+                    <article>
+                        <span>🛒 Ventas</span>
+                        <strong>{{ resumen.cantidad_ventas }}</strong>
+                    </article>
+
+                    <article>
+                        <span>💳 Abonos</span>
+                        <strong>{{ resumen.cantidad_abonos }}</strong>
+                    </article>
+
+                    <article>
+                        <span>📦 Reportes de inventario</span>
+                        <strong>{{ resumen.cantidad_incidencias }}</strong>
+                    </article>
+
+                    <article>
+                        <span>📝 Ventas a crédito</span>
+                        <strong>{{ resumen.ventas_credito }}</strong>
+                    </article>
+
+                </div>
+
+                <div class="rd-totales">
+
+                    <div>
+                        <span>Total vendido</span>
+                        <strong>{{ resumen.total_ventas }}</strong>
+                    </div>
+
+                    <div>
+                        <span>Abonos recibidos</span>
+                        <strong>{{ resumen.total_abonos }}</strong>
+                    </div>
+
+                    <div class="rd-total-principal">
+                        <span>💰 Dinero recaudado</span>
+                        <strong>{{ resumen.recaudado }}</strong>
+                    </div>
+
+                </div>
+
+                <p class="rd-nota">
+                    El dinero recaudado incluye las ventas
+                    de contado cobradas y los abonos recibidos.
+                    Las ventas a crédito no se suman como
+                    dinero recibido en el momento de vender.
+                </p>
+
+                {% if turno.fin %}
+
+                    <p class="rd-revision">
+                        Revisión administrativa:
+
+                        {% if turno.revisado_admin %}
+                            ✅ Revisado
+                        {% else %}
+                            ⏳ Pendiente de revisión
+                        {% endif %}
+                    </p>
+
+                {% endif %}
+
+            </div>
+
+            <div class="rd-panel">
+
+                <h2>Movimientos del turno</h2>
+
+                {% for movimiento in movimientos %}
+
+                    <article class="rd-movimiento">
+
+                        <div class="rd-movimiento-icono">
+                            {{ movimiento.icono }}
+                        </div>
+
+                        <div class="rd-movimiento-info">
+
+                            <small>{{ movimiento.tipo }}</small>
+                            <h3>{{ movimiento.titulo }}</h3>
+                            <p>{{ movimiento.descripcion }}</p>
+
+                            <span>
+                                {{ movimiento.fecha|date:"d/m/Y h:i A" }}
+                            </span>
+
+                        </div>
+
+                        <strong>{{ movimiento.valor }}</strong>
+
+                    </article>
+
+                {% empty %}
+
+                    <p class="rd-vacio">
+                        Todavía no hay movimientos registrados
+                        durante este turno.
+                    </p>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="rd-panel rd-vacio">
+
+                <h2>🕒 Todavía no tienes turnos registrados</h2>
+
+                <p>
+                    Inicia tu primer turno desde el panel
+                    del empleado. Cuando registres ventas,
+                    abonos o incidencias, aparecerán aquí.
+                </p>
+
+                <a href="{% url 'panel_empleado' %}"
+                   class="rd-enlace">
+                    Ir a iniciar turno
+                </a>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</section>
+
+{% endblock %}

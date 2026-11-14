@@ -1,0 +1,114 @@
+
+{% extends 'usuarios/base_panel.html' %}
+
+{% block title %}Panel Administrador | Charcutería{% endblock %}
+
+{% block panel_titulo %}
+Panel Administrativo
+{% endblock %}
+
+{% block panel_descripcion %}
+Supervisa y administra las operaciones
+de nuestra charcutería.
+{% endblock %}
+
+{% block panel_rol %}
+Administrador
+{% endblock %}
+
+{% block panel_modulos %}
+
+<!-- CAMPANITA DE NOTIFICACIONES -->
+<div class="ia-campanita-fila">
+
+{% if alertas_turnos > 0 %}
+    <span class="te-alerta-admin">
+        📋 {{ alertas_turnos }}
+        cierre{{ alertas_turnos|pluralize:"s" }}
+        de turno pendiente{{ alertas_turnos|pluralize:"s" }}
+    </span>
+{% endif %}
+
+    <a href="{% url 'inventario_incidencias' %}"
+       class="ia-campanita"
+       aria-label="Ver notificaciones del inventario">
+
+        <span class="ia-campanita-icono">🔔</span>
+
+        <span>Notificaciones del inventario</span>
+
+        {% if alertas_inventario > 0 %}
+
+            <span class="ia-campanita-contador">
+                {{ alertas_inventario }}
+            </span>
+
+        {% endif %}
+
+    </a>
+
+</div>
+
+
+<a href="{% url 'clientes_demo' %}" class="panel-tarjeta">
+    <div class="panel-icono">👥</div>
+    <h3>Gestión de clientes</h3>
+    <p>Consultar clientes registrados.</p>
+</a>
+
+
+<a href="{% url 'productos_demo' %}" class="panel-tarjeta">
+    <div class="panel-icono">📦</div>
+    <h3>Productos</h3>
+    <p>Administrar precios, descripciones, descuentos y combos.</p>
+</a>
+
+
+<a href="{% url 'inventario_demo' %}" class="panel-tarjeta">
+    <div class="panel-icono">🏬</div>
+    <h3>Inventario</h3>
+    <p>Controlar existencias y entradas de mercancía.</p>
+</a>
+
+
+
+<a href="{% url 'ventas_demo' %}" class="panel-tarjeta">
+    <div class="panel-icono">🛒</div>
+    <h3>Ventas</h3>
+    <p>Consultar y supervisar las operaciones.</p>
+</a>
+
+
+
+<a href="{% url 'cuentas_demo' %}" class="panel-tarjeta">
+    <div class="panel-icono">💰</div>
+    <h3>Cuentas pendientes</h3>
+    <p>Consultar deudas, intereses, plazos y abonos.</p>
+</a>
+
+
+
+<a href="{% url 'historial_demo' %}" class="panel-tarjeta">
+    <div class="panel-icono">🕒</div>
+    <h3>Historial</h3>
+    <p>Consultar ventas, facturas y abonos.</p>
+</a>
+
+
+
+<a href="{% url 'reporte_financiero_demo' %}" class="panel-tarjeta">
+    <div class="panel-icono">📊</div>
+    <h3>Reportes</h3>
+    <p>Analizar ventas, intereses, pérdidas y capital.</p>
+</a>
+
+
+
+<a href="{% url 'gestion_usuarios' %}" class="panel-tarjeta">
+    <div class="panel-icono">🛡️</div>
+    <h3>Usuarios y permisos</h3>
+    <p>Administrar las cuentas y los accesos del personal.</p>
+</a>
+
+
+{% endblock %}

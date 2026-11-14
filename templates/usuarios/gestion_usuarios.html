@@ -1,0 +1,1003 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Usuarios y Permisos | Charcutería{% endblock %}
+
+{% block content %}
+
+<section class="ug-pagina"
+         id="ugPagina"
+         data-abrir-crear="{{ abrir_crear|yesno:'si,no' }}">
+
+    <div class="ug-contenedor">
+
+        <!-- ENCABEZADO NAVIDEÑO -->
+        <header class="ug-banner">
+            <div>
+                <span>✦ CHARCUTERÍA · ADMINISTRACIÓN ✦</span>
+                <h1>Usuarios y permisos</h1>
+                <p>
+                    Administra el personal, sus cuentas
+                    y los accesos a nuestra charcutería.
+                </p>
+            </div>
+
+            <span class="ug-copo" aria-hidden="true">❄</span>
+        </header>
+
+        <!-- NAVEGACIÓN -->
+        <div class="ug-navegacion">
+            <a href="{% url 'panel_usuario' %}">
+                ← Volver al panel
+            </a>
+
+            <span>GESTIÓN DE PERSONAL</span>
+        </div>
+
+        <!-- MENSAJES DE DJANGO -->
+        {% if messages %}
+        <div class="ug-mensajes">
+            {% for message in messages %}
+                <div class="ug-mensaje">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- RESUMEN -->
+        <div class="ug-resumen">
+
+            <div class="ug-resumen-card">
+                <span>👥 Usuarios</span>
+                <strong>{{ total_usuarios }}</strong>
+            </div>
+
+            <div class="ug-resumen-card">
+                <span>✅ Activos</span>
+                <strong>{{ total_activos }}</strong>
+            </div>
+
+            <div class="ug-resumen-card">
+                <span>🛡️ Administradores</span>
+                <strong>{{ total_administradores }}</strong>
+            </div>
+
+            <div class="ug-resumen-card">
+                <span>🎄 Trabajadores</span>
+                <strong>{{ total_trabajadores }}</strong>
+            </div>
+
+        </div>
+
+        <!-- DIRECTORIO -->
+        <section class="ug-panel">
+
+            
+<div class="ug-acciones-superiores">
+
+    <button type="button"
+            class="ug-boton-foto"
+            id="ugAbrirFoto">
+        📷 Mi foto de perfil
+    </button>
+
+    <button type="button"
+            class="ug-boton-crear"
+            id="ugAbrirCrear">
+        + Nuevo usuario
+    </button>
+
+</div>
+
+
+            <!-- BUSCADOR -->
+            <div class="ug-herramientas">
+
+                <input
+                    type="search"
+                    id="ugBuscar"
+                    placeholder="Buscar nombre, usuario o correo..."
+                    aria-label="Buscar usuarios"
+                >
+
+                <select id="ugFiltro"
+                        aria-label="Filtrar usuarios">
+
+                    <option value="todos">Todos los usuarios</option>
+                    <option value="administrador">Administradores</option>
+                    <option value="trabajador">Trabajadores</option>
+                    <option value="activo">Activos</option>
+                    <option value="inactivo">Inactivos</option>
+
+                </select>
+
+            </div>
+
+            <!-- LISTA -->
+            <div class="ug-lista">
+
+                {% for item in usuarios %}
+
+                <div class="ug-usuario"
+                     data-busqueda="{{ item.usuario.username|lower }} {{ item.usuario.first_name|lower }} {{ item.usuario.last_name|lower }} {{ item.usuario.email|lower }}"
+                     data-rol="{{ item.rol|lower }}"
+                     data-estado="{% if item.usuario.is_active %}activo{% else %}inactivo{% endif %}">
+
+                    
+
+<div class="ug-avatar">
+
+    {% if item.usuario.perfil_usuario.foto %}
+
+        <img
+            src="{{ item.usuario.perfil_usuario.foto.url }}"
+            alt="Foto de {{ item.usuario.username }}"
+            class="ug-foto-usuario"
+            data-pos-x="{{ item.usuario.perfil_usuario.posicion_x }}"
+            data-pos-y="{{ item.usuario.perfil_usuario.posicion_y }}"
+        >
+
+    {% elif item.usuario.is_superuser %}
+
+        👑
+
+    {% else %}
+
+        {{ item.usuario.username|slice:":1"|upper }}
+
+    {% endif %}
+
+</div>
+
+
+                    <!-- DATOS -->
+                    <div class="ug-usuario-info">
+
+                        <h3>
+                            {{ item.usuario.username }}
+                        </h3>
+
+                        <p>
+                            {% if item.usuario.first_name or item.usuario.last_name %}
+                                {{ item.usuario.first_name }}
+                                {{ item.usuario.last_name }}
+                            {% else %}
+                                Sin nombre registrado
+                            {% endif %}
+                        </p>
+
+                        <small>
+                            {% if item.usuario.email %}
+                                {{ item.usuario.email }}
+                            {% else %}
+                                Sin correo registrado
+                            {% endif %}
+                        </small>
+
+                    </div>
+
+                    <!-- ROL -->
+                    <div class="ug-rol">
+                        <span class="ug-rol-etiqueta">
+                            {{ item.rol }}
+                        </span>
+                    </div>
+
+                    <!-- ESTADO -->
+                    <div class="ug-estado">
+                        {% if item.usuario.is_active %}
+                            <span class="ug-activo">● Activo</span>
+                        {% else %}
+                            <span class="ug-inactivo">● Inactivo</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- ACCIONES -->
+                    <div class="ug-acciones">
+
+                        {% if item.editable %}
+
+                        <button
+                            type="button"
+                            class="ug-boton-editar"
+                            data-usuario="{{ item.usuario.username }}"
+                            data-nombre="{{ item.usuario.first_name }}"
+                            data-apellido="{{ item.usuario.last_name }}"
+                            data-email="{{ item.usuario.email }}"
+                            data-rol="{{ item.rol }}"
+                            data-activo="{% if item.usuario.is_active %}si{% else %}no{% endif %}"
+                            data-fecha="{{ item.usuario.date_joined|date:'d/m/Y' }}"
+                            data-editar-url="{% url 'editar_usuario_gestion' item.usuario.id %}"
+                            data-clave-url="{% url 'clave_usuario_gestion' item.usuario.id %}"
+                        >
+                            Gestionar
+                        </button>
+
+                        {% else %}
+
+                        <span class="ug-protegido">
+                            <icon>🛡️</icon> Protegido
+                        </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            <p class="ug-sin-resultados"
+               id="ugSinResultados" hidden>
+                No se encontraron usuarios.
+            </p>
+
+        </section>
+
+        <!-- PERMISOS SEGÚN EL ROL -->
+        <section class="ug-panel">
+
+            <div class="ug-panel-titulo">
+                <div>
+                    <span>✦ CONTROL DE ACCESO</span>
+                    <h2>Permisos por rol</h2>
+                    <p>
+                        Distribución actual de las funciones
+                        de nuestro sistema.
+                    </p>
+                </div>
+            </div>
+
+            <div class="ug-permisos">
+
+                <div>
+                    <h3>🛡️ Administrador</h3>
+                    <p>Gestión general de la charcutería.</p>
+
+                    <span>✓ Clientes y facturas</span>
+                    <span>✓ Inventario y productos</span>
+                    <span>✓ Ventas y cuentas pendientes</span>
+                    <span>✓ Reportes financieros</span>
+                    <span>✓ Gestión del personal</span>
+                </div>
+
+                <div>
+                    <h3>👤 Trabajador</h3>
+                    <p>Operaciones autorizadas del personal.</p>
+
+                    <span>✓ Consultar clientes</span>
+                    <span>✓ Consultar facturas</span>
+                    <span>✓ Consultar cuentas pendientes</span>
+                    <span>✓ Consultar historial</span>
+                    <span class="ug-restringido">
+                        ✕ Administración y permisos
+                    </span>
+                </div>
+
+            </div>
+
+            <p class="ug-aclaracion">
+                Estos son los accesos que hemos definido
+                mediante los grupos de Django.
+                Los permisos individuales por módulo
+                se configurarán cuando todas las vistas
+                tengan verificaciones específicas.
+            </p>
+
+        </section>
+
+        <!-- HISTORIAL -->
+        <section class="ug-panel">
+
+            <div class="ug-panel-titulo">
+                <div>
+                    <span>✦ REGISTRO DE ACTIVIDAD</span>
+                    <h2>Últimos cambios administrativos</h2>
+                    <p>
+                        Acciones realizadas desde
+                        la gestión de usuarios.
+                    </p>
+                </div>
+            </div>
+
+            <div class="ug-actividades">
+
+                {% for actividad in actividades %}
+
+                <div class="ug-actividad">
+
+                    <div class="ug-actividad-icono">📝</div>
+
+                    <div>
+                        <strong>{{ actividad.accion }}</strong>
+                        <p>{{ actividad.detalle }}</p>
+
+                        <small>
+                            Por
+                            {% if actividad.actor %}
+                                {{ actividad.actor.username }}
+                            {% else %}
+                                Sistema
+                            {% endif %}
+                            · {{ actividad.fecha|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+
+                </div>
+
+                {% empty %}
+
+                <p class="ug-sin-actividad">
+                    Aún no hay cambios administrativos registrados.
+                </p>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+    </div>
+</section>
+
+
+<!-- =====================================
+     VENTANA: CREAR USUARIO
+===================================== -->
+<dialog class="ug-modal" id="ugModalCrear"
+        aria-labelledby="ugTituloCrear">
+
+    <div class="ug-modal-header">
+
+        <div>
+            <span>✦ NUEVA CUENTA ✦</span>
+            <h2 id="ugTituloCrear">Crear usuario 🎄</h2>
+        </div>
+
+        <button type="button"
+                class="ug-cerrar"
+                data-cerrar="ugModalCrear"
+                aria-label="Cerrar ventana">
+            ×
+        </button>
+
+    </div>
+
+    <form method="post"
+          action="{% url 'crear_usuario_gestion' %}"
+          class="ug-formulario">
+
+        {% csrf_token %}
+
+        {% if formulario.errors %}
+        <div class="ug-form-error">
+            <strong>Revisa los siguientes datos:</strong>
+
+            {% for campo in formulario %}
+                {% for error in campo.errors %}
+                    <p>{{ campo.label }}: {{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+
+            {% for error in formulario.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <p class="ug-form-descripcion">
+            Registra una cuenta para que el empleado
+            pueda iniciar sesión desde nuestro login.
+        </p>
+
+        <label for="ugNuevoUsuario">Nombre de usuario</label>
+        <input type="text"
+               id="ugNuevoUsuario"
+               name="username"
+               value="{{ formulario.username.value|default_if_none:'' }}"
+               autocomplete="username"
+               maxlength="150"
+               required>
+
+        <div class="ug-form-grid">
+
+            <div>
+                <label for="ugNuevoNombre">Nombre</label>
+                <input type="text"
+                       id="ugNuevoNombre"
+                       name="first_name"
+                       value="{{ formulario.first_name.value|default_if_none:'' }}"
+                       maxlength="150">
+            </div>
+
+            <div>
+                <label for="ugNuevoApellido">Apellido</label>
+                <input type="text"
+                       id="ugNuevoApellido"
+                       name="last_name"
+                       value="{{ formulario.last_name.value|default_if_none:'' }}"
+                       maxlength="150">
+            </div>
+
+        </div>
+
+        <label for="ugNuevoCorreo">Correo electrónico</label>
+        <input type="email"
+               id="ugNuevoCorreo"
+               name="email"
+               value="{{ formulario.email.value|default_if_none:'' }}"
+               autocomplete="email">
+
+        <label for="ugNuevoRol">Rol del usuario</label>
+
+        <select id="ugNuevoRol" name="rol" required>
+            <option value="Trabajador">Trabajador</option>
+
+            {% if puede_crear_admin %}
+                <option value="Administrador">Administrador</option>
+            {% endif %}
+        </select>
+
+        <label for="ugNuevaClave">Contraseña inicial</label>
+        <input type="password"
+               id="ugNuevaClave"
+               name="password1"
+               autocomplete="new-password"
+               required>
+
+        <label for="ugRepetirClave">Confirmar contraseña</label>
+        <input type="password"
+               id="ugRepetirClave"
+               name="password2"
+               autocomplete="new-password"
+               required>
+
+        <p class="ug-form-ayuda">
+            Utiliza una contraseña segura. El sistema
+            comprobará las reglas de seguridad de Django.
+        </p>
+
+        <button type="submit" class="ug-guardar">
+            + Crear cuenta
+        </button>
+
+    </form>
+
+</dialog>
+
+
+<!-- =====================================
+     VENTANA: ADMINISTRAR USUARIO
+===================================== -->
+<dialog class="ug-modal" id="ugModalEditar"
+        aria-labelledby="ugTituloEditar">
+
+    <div class="ug-modal-header">
+        <div>
+            <span>✦ ADMINISTRACIÓN DE CUENTA ✦</span>
+            <h2 id="ugTituloEditar">Gestionar usuario</h2>
+        </div>
+
+        <button type="button"
+                class="ug-cerrar"
+                data-cerrar="ugModalEditar"
+                aria-label="Cerrar ventana">
+            ×
+        </button>
+    </div>
+
+    <div class="ug-perfil-modal">
+
+        <div class="ug-avatar ug-avatar-grande"
+             id="ugPerfilAvatar">
+        </div>
+
+        <h3 id="ugPerfilNombre"></h3>
+
+        <p id="ugPerfilFecha"></p>
+
+    </div>
+
+    <!-- EDITAR INFORMACIÓN -->
+    <form method="post"
+          id="ugFormularioEditar"
+          class="ug-formulario">
+
+        {% csrf_token %}
+
+        <h3>Información de la cuenta</h3>
+
+        <div class="ug-form-grid">
+
+            <div>
+                <label for="ugEditarNombre">Nombre</label>
+                <input type="text"
+                       id="ugEditarNombre"
+                       name="first_name"
+                       maxlength="150">
+            </div>
+
+            <div>
+                <label for="ugEditarApellido">Apellido</label>
+                <input type="text"
+                       id="ugEditarApellido"
+                       name="last_name"
+                       maxlength="150">
+            </div>
+
+        </div>
+
+        <label for="ugEditarCorreo">Correo electrónico</label>
+        <input type="email"
+               id="ugEditarCorreo"
+               name="email">
+
+        <label for="ugEditarRol">Rol</label>
+
+        <select id="ugEditarRol" name="rol">
+            <option value="Trabajador">Trabajador</option>
+
+            {% if puede_crear_admin %}
+                <option value="Administrador">Administrador</option>
+            {% endif %}
+        </select>
+
+        <label class="ug-checkbox">
+            <input type="checkbox"
+                   id="ugEditarActivo"
+                   name="is_active">
+            <span>Cuenta activa</span>
+        </label>
+
+        <p class="ug-form-ayuda">
+            Si desactivas una cuenta, el usuario
+            no podrá iniciar sesión.
+        </p>
+
+        <button type="submit" class="ug-guardar">
+            Guardar cambios
+        </button>
+
+    </form>
+
+    <!-- RESTABLECER CONTRASEÑA -->
+    <form method="post"
+          id="ugFormularioClave"
+          class="ug-formulario ug-clave-form">
+
+        {% csrf_token %}
+
+        <h3>🔐 Restablecer contraseña</h3>
+
+        <p class="ug-form-descripcion">
+            Establece una nueva contraseña para este usuario.
+            No necesitas conocer la anterior.
+        </p>
+
+        <label for="ugClaveNueva">Nueva contraseña</label>
+        <input type="password"
+               id="ugClaveNueva"
+               name="new_password1"
+               autocomplete="new-password"
+               required>
+
+        <label for="ugClaveConfirmar">Confirmar contraseña</label>
+        <input type="password"
+               id="ugClaveConfirmar"
+               name="new_password2"
+               autocomplete="new-password"
+               required>
+
+        <button type="submit" class="ug-guardar ug-guardar-clave">
+            Actualizar contraseña
+        </button>
+
+    </form>
+
+</dialog>
+
+
+<!-- JAVASCRIPT -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const modalCrear = document.getElementById('ugModalCrear');
+    const modalEditar = document.getElementById('ugModalEditar');
+
+    const botonesEditar = document.querySelectorAll(
+        '.ug-boton-editar'
+    );
+
+    const usuarios = document.querySelectorAll('.ug-usuario');
+    const buscar = document.getElementById('ugBuscar');
+    const filtro = document.getElementById('ugFiltro');
+    const sinResultados = document.getElementById(
+        'ugSinResultados'
+    );
+
+    // ABRIR CREACIÓN
+    document.getElementById('ugAbrirCrear')
+        .addEventListener('click', function () {
+            modalCrear.showModal();
+        });
+
+    // ABRIR AUTOMÁTICAMENTE SI EL FORMULARIO FALLÓ
+    if (
+        document.getElementById('ugPagina')
+            .dataset.abrirCrear === 'si'
+    ) {
+        modalCrear.showModal();
+    }
+
+    // ABRIR PERFIL
+    botonesEditar.forEach(function (boton) {
+
+        boton.addEventListener('click', function () {
+
+            const datos = boton.dataset;
+
+            document.getElementById('ugTituloEditar').textContent =
+                'Gestionar ' + datos.usuario;
+
+            document.getElementById('ugPerfilNombre').textContent =
+                datos.usuario;
+
+            document.getElementById('ugPerfilAvatar').textContent =
+                datos.usuario.charAt(0).toUpperCase();
+
+            document.getElementById('ugPerfilFecha').textContent =
+                'Registro: ' + datos.fecha;
+
+            document.getElementById('ugEditarNombre').value =
+                datos.nombre;
+
+            document.getElementById('ugEditarApellido').value =
+                datos.apellido;
+
+            document.getElementById('ugEditarCorreo').value =
+                datos.email;
+
+            document.getElementById('ugEditarRol').value =
+                datos.rol;
+
+            document.getElementById('ugEditarActivo').checked =
+                datos.activo === 'si';
+
+            document.getElementById(
+                'ugFormularioEditar'
+            ).action = datos.editarUrl;
+
+            document.getElementById(
+                'ugFormularioClave'
+            ).action = datos.claveUrl;
+
+            document.getElementById('ugClaveNueva').value = '';
+            document.getElementById('ugClaveConfirmar').value = '';
+
+            modalEditar.showModal();
+
+        });
+
+    });
+
+    // BUSCADOR Y FILTROS
+    function filtrarUsuarios() {
+
+        const texto = buscar.value.toLowerCase().trim();
+        const valor = filtro.value;
+
+        let visibles = 0;
+
+        usuarios.forEach(function (usuario) {
+
+            const coincideTexto =
+                usuario.dataset.busqueda.includes(texto);
+
+            const rol = usuario.dataset.rol;
+            const estado = usuario.dataset.estado;
+
+            let coincideFiltro = valor === 'todos';
+
+            if (valor === 'administrador') {
+                coincideFiltro = rol.includes('administrador');
+            } else if (valor === 'trabajador') {
+                coincideFiltro = rol === 'trabajador';
+            } else if (valor === 'activo' ||
+                       valor === 'inactivo') {
+                coincideFiltro = estado === valor;
+            }
+
+            const mostrar = coincideTexto && coincideFiltro;
+
+            usuario.hidden = !mostrar;
+
+            if (mostrar) visibles++;
+        });
+
+        sinResultados.hidden = visibles > 0;
+    }
+
+    buscar.addEventListener('input', filtrarUsuarios);
+    filtro.addEventListener('change', filtrarUsuarios);
+
+    // CERRAR VENTANAS
+    document.querySelectorAll('[data-cerrar]')
+        .forEach(function (boton) {
+
+            boton.addEventListener('click', function () {
+
+                document.getElementById(
+                    boton.dataset.cerrar
+                ).close();
+
+            });
+
+        });
+
+    // CERRAR AL PULSAR FUERA
+    [modalCrear, modalEditar].forEach(function (modal) {
+
+        modal.addEventListener('click', function (evento) {
+
+            if (evento.target !== modal) return;
+
+            const rect = modal.getBoundingClientRect();
+
+            const fuera =
+                evento.clientX < rect.left ||
+                evento.clientX > rect.right ||
+                evento.clientY < rect.top ||
+                evento.clientY > rect.bottom;
+
+            if (fuera) modal.close();
+        });
+
+    });
+
+});
+</script>
+
+<!-- =====================================
+     EDITAR MI FOTO DE PERFIL
+===================================== -->
+
+<dialog class="ug-modal" id="ugModalFoto"
+        aria-labelledby="ugTituloFoto">
+
+    <div class="ug-modal-header">
+
+        <div>
+            <span>✦ PERSONALIZAR PERFIL ✦</span>
+            <h2 id="ugTituloFoto">Mi fotografía 🎄</h2>
+        </div>
+
+        <button type="button"
+                class="ug-cerrar"
+                id="ugCerrarFoto"
+                aria-label="Cerrar ventana">
+            ×
+        </button>
+
+    </div>
+
+    <form method="post"
+          action="{% url 'actualizar_mi_foto' %}"
+          enctype="multipart/form-data"
+          class="ug-foto-formulario">
+
+        {% csrf_token %}
+
+        <!-- VISTA PREVIA -->
+        <div class="ug-foto-presentacion">
+
+            <div class="ug-foto-preview">
+
+                {% if request.user.perfil_usuario.foto %}
+
+                    <img
+                        id="ugImagenPreview"
+                        src="{{ request.user.perfil_usuario.foto.url }}"
+                        alt="Vista previa de tu foto"
+                    >
+
+                {% else %}
+
+                    <img
+                        id="ugImagenPreview"
+                        alt="Vista previa de tu foto"
+                        hidden
+                    >
+
+                {% endif %}
+
+                <span id="ugFotoPlaceholder"
+                      {% if request.user.perfil_usuario.foto %}hidden{% endif %}>
+                    👑
+                </span>
+
+            </div>
+
+            <h3>{{ request.user.username }}</h3>
+            <p>Personaliza tu fotografía de perfil</p>
+
+        </div>
+
+        <!-- SELECCIONAR ARCHIVO -->
+        <label for="ugArchivoFoto" class="ug-seleccionar-foto">
+            📷 Seleccionar fotografía
+        </label>
+
+        <input
+            type="file"
+            name="foto"
+            id="ugArchivoFoto"
+            accept="image/jpeg,image/png,image/webp"
+            class="ug-input-archivo"
+        >
+
+        <p class="ug-ayuda-foto">
+            Formatos JPG, PNG o WEBP. Máximo 3 MB.
+        </p>
+
+        <!-- POSICIÓN HORIZONTAL -->
+        <div class="ug-ajuste-foto">
+
+            <label for="ugPosicionX">
+                <span>↔ Posición horizontal</span>
+                <strong id="ugValorX">50%</strong>
+            </label>
+
+            <input
+                type="range"
+                id="ugPosicionX"
+                name="posicion_x"
+                min="0"
+                max="100"
+                value="{{ request.user.perfil_usuario.posicion_x|default_if_none:'50' }}"
+            >
+
+        </div>
+
+        <!-- POSICIÓN VERTICAL -->
+        <div class="ug-ajuste-foto">
+
+            <label for="ugPosicionY">
+                <span>↕ Posición vertical</span>
+                <strong id="ugValorY">50%</strong>
+            </label>
+
+            <input
+                type="range"
+                id="ugPosicionY"
+                name="posicion_y"
+                min="0"
+                max="100"
+                value="{{ request.user.perfil_usuario.posicion_y|default_if_none:'50' }}"
+            >
+
+        </div>
+
+        <p class="ug-ayuda-foto">
+            Mueve los controles para acomodar tu imagen
+            dentro del círculo antes de guardarla.
+        </p>
+
+        <!-- BOTÓN GUARDAR -->
+        <button type="submit" class="ug-guardar">
+            💾 Guardar mi fotografía
+        </button>
+
+    </form>
+
+</dialog>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const modal = document.getElementById('ugModalFoto');
+    const abrir = document.getElementById('ugAbrirFoto');
+    const cerrar = document.getElementById('ugCerrarFoto');
+
+    const archivo = document.getElementById('ugArchivoFoto');
+    const imagen = document.getElementById('ugImagenPreview');
+    const placeholder = document.getElementById('ugFotoPlaceholder');
+
+    const posicionX = document.getElementById('ugPosicionX');
+    const posicionY = document.getElementById('ugPosicionY');
+
+    const valorX = document.getElementById('ugValorX');
+    const valorY = document.getElementById('ugValorY');
+
+    let urlTemporal = null;
+
+    // MOSTRAR FOTOS EN EL DIRECTORIO
+    document.querySelectorAll('.ug-foto-usuario')
+        .forEach(function (foto) {
+
+            foto.style.objectPosition =
+                foto.dataset.posX + '% ' +
+                foto.dataset.posY + '%';
+
+        });
+
+    // ACTUALIZAR VISTA PREVIA
+    function actualizarPosicion() {
+
+        const x = posicionX.value;
+        const y = posicionY.value;
+
+        imagen.style.objectPosition = x + '% ' + y + '%';
+
+        valorX.textContent = x + '%';
+        valorY.textContent = y + '%';
+    }
+
+    // ABRIR VENTANA
+    abrir.addEventListener('click', function () {
+
+        actualizarPosicion();
+        modal.showModal();
+
+    });
+
+    // CARGAR ARCHIVO NUEVO
+    archivo.addEventListener('change', function () {
+
+        const foto = archivo.files[0];
+
+        if (!foto) return;
+
+        if (foto.size > 3 * 1024 * 1024) {
+            alert('La fotografía no puede superar los 3 MB.');
+            archivo.value = '';
+            return;
+        }
+
+        if (urlTemporal) {
+            URL.revokeObjectURL(urlTemporal);
+        }
+
+        urlTemporal = URL.createObjectURL(foto);
+
+        imagen.src = urlTemporal;
+        imagen.hidden = false;
+        placeholder.hidden = true;
+
+        actualizarPosicion();
+
+    });
+
+    // CONTROLES DE POSICIÓN
+    posicionX.addEventListener('input', actualizarPosicion);
+    posicionY.addEventListener('input', actualizarPosicion);
+
+    // CERRAR
+    cerrar.addEventListener('click', function () {
+        modal.close();
+    });
+
+    modal.addEventListener('click', function (evento) {
+
+        if (evento.target !== modal) return;
+
+        const rect = modal.getBoundingClientRect();
+
+        const fuera =
+            evento.clientX < rect.left ||
+            evento.clientX > rect.right ||
+            evento.clientY < rect.top ||
+            evento.clientY > rect.bottom;
+
+        if (fuera) modal.close();
+
+    });
+
+    actualizarPosicion();
+
+});
+</script>
+
+{% endblock %}

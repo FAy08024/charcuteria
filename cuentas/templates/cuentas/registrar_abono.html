@@ -1,0 +1,468 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Registrar abono | Charcutería{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=9">
+
+<main class="ab-pagina">
+    <div class="ab-contenedor">
+
+        <header class="ab-banner">
+            <div>
+                <small>✦ CHARCUTERÍA · CUENTAS POR COBRAR ✦</small>
+                <h1>Registrar abono</h1>
+                <p>Registra pagos y actualiza los saldos pendientes.</p>
+            </div>
+
+            <div class="ab-decoracion">💳</div>
+        </header>
+
+        <nav class="ab-navegacion">
+            <a href="{% url 'panel_usuario' %}">
+                ← Volver al panel
+            </a>
+
+            <span>CONTROL DE PAGOS</span>
+        </nav>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="ab-exito" role="status">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if error %}
+            <div class="ab-error" role="alert">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <div class="ab-columnas">
+
+            <!-- FORMULARIO DE ABONO -->
+            <section class="ab-panel">
+
+                <div class="ab-titulo">
+                    <small>✦ NUEVO MOVIMIENTO</small>
+                    <h2>Datos del abono</h2>
+
+                    <p>
+                        Selecciona primero al cliente y
+                        después el crédito que recibirá el pago.
+                    </p>
+                </div>
+
+                <form method="post"
+                      action="{% url 'registrar_abono' %}"
+                      id="abFormulario">
+
+                    {% csrf_token %}
+
+                    <!-- SELECCIONAR CLIENTE -->
+                    <label for="abCliente">
+                        Cliente con deuda pendiente
+                    </label>
+
+                    <select id="abCliente"
+                            class="ab-input"
+                            required>
+
+                        <option value="">
+                            Selecciona un cliente
+                        </option>
+
+                        {% for cliente in clientes_con_deuda %}
+
+                            <option
+                                value="{{ cliente.id }}"
+                                data-saldo="{{ cliente.saldo }}">
+
+                                {{ cliente.nombre }}
+                                · {{ cliente.saldo_formato }}
+                                · {{ cliente.cantidad_creditos }}
+                                crédito{{ cliente.cantidad_creditos|pluralize }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                    <!-- TOTAL DE DEUDA DEL CLIENTE -->
+                    <div class="ab-saldo">
+                        <span>DEUDA TOTAL DEL CLIENTE</span>
+
+                        <strong id="abSaldoCliente">
+                            Selecciona un cliente
+                        </strong>
+                    </div>
+
+                    <!-- SELECCIONAR CRÉDITO -->
+                    <label for="abCuenta">
+                        Crédito que recibirá el abono
+                    </label>
+
+                    <select id="abCuenta"
+                            name="cuenta_numero"
+                            class="ab-input"
+                            required
+                            disabled>
+
+                        <option value="">
+                            Selecciona primero un cliente
+                        </option>
+
+                        {% for cuenta in cuentas %}
+
+                            <option
+                                value="{{ cuenta.numero }}"
+                                data-cliente="{{ cuenta.cliente_id }}"
+                                data-saldo="{{ cuenta.saldo }}">
+
+                                {{ cuenta.numero }}
+                                · {{ cuenta.saldo_formato }}
+                                pendientes
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                    <!-- SALDO DEL CRÉDITO -->
+                    <div class="ab-saldo">
+                        <span>SALDO DEL CRÉDITO SELECCIONADO</span>
+
+                        <strong id="abSaldo">
+                            Selecciona un crédito
+                        </strong>
+                    </div>
+
+                    <!-- MONTO -->
+                    <label for="abMonto">
+                        Valor del abono (COP)
+                    </label>
+
+                    <input type="number"
+                           id="abMonto"
+                           name="monto"
+                           class="ab-input"
+                           placeholder="Ejemplo: 50000"
+                           min="1"
+                           step="1"
+                           required>
+
+                    <!-- SALDO DESPUÉS DEL PAGO -->
+                    <div class="ab-saldo ab-saldo-restante">
+
+                        <span>
+                            SALDO DEL CRÉDITO DESPUÉS DEL ABONO
+                        </span>
+
+                        <strong id="abRestante">
+                            —
+                        </strong>
+
+                    </div>
+
+                    <!-- NUEVO SALDO TOTAL -->
+                    <div class="ab-saldo">
+
+                        <span>
+                            DEUDA TOTAL DEL CLIENTE DESPUÉS DEL ABONO
+                        </span>
+
+                        <strong id="abRestanteCliente">
+                            —
+                        </strong>
+
+                    </div>
+
+                    <!-- MÉTODO DE PAGO -->
+                    <label for="abMetodo">
+                        Método de pago
+                    </label>
+
+                    <select id="abMetodo"
+                            name="metodo_pago"
+                            class="ab-input"
+                            required>
+
+                        <option value="Efectivo">
+                            Efectivo
+                        </option>
+
+                        <option value="Transferencia">
+                            Transferencia
+                        </option>
+
+                        <option value="Tarjeta">
+                            Tarjeta
+                        </option>
+
+                    </select>
+
+                    <button type="submit" class="ab-guardar">
+                        ✓ Registrar abono
+                    </button>
+
+                    <p class="ab-aviso">
+                        El pago se guardará en SQLite,
+                        reducirá el saldo del crédito
+                        seleccionado y actualizará la
+                        deuda total del cliente.
+                    </p>
+
+                </form>
+            </section>
+
+            <!-- HISTORIAL DE ABONOS -->
+            <section class="ab-panel">
+
+                <div class="ab-titulo">
+                    <small>✦ HISTORIAL DE PAGOS</small>
+                    <h2>Últimos abonos</h2>
+
+                    <p>
+                        Movimientos registrados por el personal.
+                    </p>
+                </div>
+
+                {% for abono in ultimos_abonos %}
+
+                    <div class="ab-movimiento">
+
+                        <div class="ab-movimiento-info">
+
+                            <strong>
+                                {{ abono.cuenta_numero }}
+                            </strong>
+
+                            <small>
+                                {{ abono.fecha|date:'d/m/Y H:i' }}
+                            </small>
+
+                            <small>
+                                {{ abono.metodo_pago }}
+                            </small>
+
+                            <small>
+                                Empleado:
+
+                                {% if abono.empleado %}
+                                    {{ abono.empleado.username }}
+                                {% else %}
+                                    Usuario no disponible
+                                {% endif %}
+
+                            </small>
+
+                        </div>
+
+                        <strong class="ab-movimiento-monto">
+                            + ${{ abono.monto }}
+                        </strong>
+
+                    </div>
+
+                {% empty %}
+
+                    <div class="ab-sin-movimientos">
+
+                        <div>💳</div>
+
+                        <h3>Aún no hay abonos registrados</h3>
+
+                        <p>
+                            Cuando registres el primero,
+                            aparecerá aquí.
+                        </p>
+
+                    </div>
+
+                {% endfor %}
+
+            </section>
+
+        </div>
+
+    </div>
+</main>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const cliente = document.getElementById('abCliente');
+    const cuenta = document.getElementById('abCuenta');
+    const monto = document.getElementById('abMonto');
+
+    const saldoClienteTexto = document.getElementById(
+        'abSaldoCliente'
+    );
+
+    const saldoTexto = document.getElementById(
+        'abSaldo'
+    );
+
+    const restanteTexto = document.getElementById(
+        'abRestante'
+    );
+
+    const restanteClienteTexto = document.getElementById(
+        'abRestanteCliente'
+    );
+
+    // CONSERVAR LAS OPCIONES ORIGINALES DE CRÉDITO
+    const opcionesCreditos = Array.from(
+        cuenta.querySelectorAll('option[data-cliente]')
+    );
+
+    function pesos(valor) {
+        return '$' + new Intl.NumberFormat('es-CO')
+            .format(valor);
+    }
+
+    function actualizarResumen() {
+
+        const opcionCliente = cliente.selectedOptions[0];
+        const opcionCuenta = cuenta.selectedOptions[0];
+
+        const saldoCliente = Number(
+            opcionCliente?.dataset.saldo || 0
+        );
+
+        const saldoCredito = Number(
+            opcionCuenta?.dataset.saldo || 0
+        );
+
+        const abono = Number(monto.value || 0);
+
+        // SIN CLIENTE
+        if (!cliente.value) {
+
+            saldoClienteTexto.textContent =
+                'Selecciona un cliente';
+
+            saldoTexto.textContent =
+                'Selecciona un crédito';
+
+            restanteTexto.textContent = '—';
+            restanteClienteTexto.textContent = '—';
+
+            monto.removeAttribute('max');
+            monto.setCustomValidity('');
+
+            return;
+        }
+
+        saldoClienteTexto.textContent = pesos(
+            saldoCliente
+        );
+
+        // SIN CRÉDITO
+        if (!cuenta.value) {
+
+            saldoTexto.textContent =
+                'Selecciona un crédito';
+
+            restanteTexto.textContent = '—';
+
+            restanteClienteTexto.textContent = pesos(
+                saldoCliente
+            );
+
+            monto.removeAttribute('max');
+            monto.setCustomValidity('');
+
+            return;
+        }
+
+        saldoTexto.textContent = pesos(
+            saldoCredito
+        );
+
+        monto.max = saldoCredito;
+
+        if (abono > saldoCredito) {
+            monto.setCustomValidity(
+                'El abono supera el saldo de este crédito.'
+            );
+        } else {
+            monto.setCustomValidity('');
+        }
+
+        restanteTexto.textContent = pesos(
+            Math.max(saldoCredito - abono, 0)
+        );
+
+        restanteClienteTexto.textContent = pesos(
+            Math.max(saldoCliente - abono, 0)
+        );
+    }
+
+    function filtrarCreditos() {
+
+        const clienteId = cliente.value;
+
+        // REINICIAR CRÉDITOS
+        cuenta.innerHTML = '';
+
+        const primeraOpcion = document.createElement(
+            'option'
+        );
+
+        primeraOpcion.value = '';
+        primeraOpcion.textContent = clienteId
+            ? 'Selecciona un crédito'
+            : 'Selecciona primero un cliente';
+
+        cuenta.appendChild(primeraOpcion);
+
+        // MOSTRAR SOLO LOS CRÉDITOS DEL CLIENTE
+        opcionesCreditos.forEach(function (opcion) {
+
+            if (opcion.dataset.cliente === clienteId) {
+
+                cuenta.appendChild(
+                    opcion.cloneNode(true)
+                );
+
+            }
+
+        });
+
+        cuenta.disabled = !clienteId;
+
+        monto.value = '';
+
+        actualizarResumen();
+    }
+
+    cliente.addEventListener(
+        'change',
+        filtrarCreditos
+    );
+
+    cuenta.addEventListener(
+        'change',
+        actualizarResumen
+    );
+
+    monto.addEventListener(
+        'input',
+        actualizarResumen
+    );
+
+    filtrarCreditos();
+
+});
+</script>
+
+{% endblock %}

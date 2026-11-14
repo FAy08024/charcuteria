@@ -1,42 +1,303 @@
 
-
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Inicio | Charcutería{% endblock %}
 
 {% block content %}
 
-<h1>Bienvenido al Sistema de Charcutería</h1>
 
-<p>
-    Sistema para gestionar clientes, productos,
-    inventario, ventas y cuentas pendientes.
-</p>
 
-<h2>Menú principal</h2>
+<!-- CARRUSEL DE OFERTAS NAVIDEÑAS -->
+<section class="ofertas">
+    <div class="ofertas-contenedor">
 
-<div class="contenedor">
+        <div class="ofertas-pista">
 
-    <div class="tarjeta">
-        <h3>Clientes</h3>
-        <p>Consultar y administrar clientes.</p>
+            <div class="oferta-slide">
+                <img src="{% static 'img/OFERTA1.png' %}"
+                     alt="Primera oferta navideña">
+            </div>
+
+            <div class="oferta-slide">
+                <img src="{% static 'img/OFERTA2.png' %}"
+                     alt="Segunda oferta navideña">
+            </div>
+
+            <div class="oferta-slide">
+                <img src="{% static 'img/OFERTA3.png' %}"
+                     alt="Tercera oferta navideña">
+            </div>
+
+        </div>
+
+        <!-- Flechas -->
+        <button class="oferta-flecha oferta-anterior"
+                type="button" aria-label="Oferta anterior">
+            &#10094;
+        </button>
+
+        <button class="oferta-flecha oferta-siguiente"
+                type="button" aria-label="Siguiente oferta">
+            &#10095;
+        </button>
+
+        <!-- Indicadores -->
+        <div class="oferta-puntos">
+            <button class="oferta-punto activo"
+                    type="button" aria-label="Ver oferta 1"
+                    aria-current="true"></button>
+            <button class="oferta-punto"
+                    type="button" aria-label="Ver oferta 2"></button>
+            <button class="oferta-punto"
+                    type="button" aria-label="Ver oferta 3"></button>
+        </div>
+
+    </div>
+</section>
+
+
+
+<!-- CARRUSEL HORIZONTAL HAZ TU PEDIDO -->
+<section class="pedido-carrusel">
+
+    <div class="pedido-pista">
+
+        {% for grupo in "12" %}
+        <div class="pedido-grupo" {% if forloop.last %}aria-hidden="true"{% endif %}>
+
+            {% for numero in "123456" %}
+            <div class="pedido-tarjeta">
+
+                <img src="{% static 'img/camion.jpg' %}"
+                     alt=""
+                     class="pedido-camion">
+
+                <span>Haz tu pedido aquí</span>
+
+            </div>
+            {% endfor %}
+
+        </div>
+        {% endfor %}
+
     </div>
 
-    <div class="tarjeta">
-        <h3>Inventario</h3>
-        <p>Consultar productos y existencias.</p>
+</section>
+
+
+
+
+
+
+<!-- CATÁLOGO DE PRODUCTOS -->
+<section class="catalogo" id="productos">
+
+    <!-- PRIMERA SECCIÓN -->
+    <div class="catalogo-bloque">
+
+        <div class="catalogo-titulo">
+            <h2>Especialidades de nuestra Charcutería</h2>
+            <p>Una selección de productos para tu mesa</p>
+        </div>
+
+        <div class="catalogo-grid">
+
+            <article class="catalogo-producto">
+                <div class="catalogo-imagen">
+                    <img src="{% static 'img/jamon.png' %}"
+                         alt="Jamones">
+                </div>
+                <h3>Jamones</h3>
+                <p>Selección de charcutería</p>
+            </article>
+
+            <article class="catalogo-producto">
+                <div class="catalogo-imagen">
+                    <img src="{% static 'img/chorizo.png' %}"
+                         alt="Chorizos">
+                </div>
+                <h3>Chorizos</h3>
+                <p>Embutidos tradicionales</p>
+            </article>
+
+            <article class="catalogo-producto">
+                <div class="catalogo-imagen">
+                    <img src="{% static 'img/combo.png' %}"
+                         alt="Combos especiales">
+                </div>
+                <h3>Combos especiales</h3>
+                <p>Selección para compartir</p>
+            </article>
+
+            <article class="catalogo-producto">
+                <div class="catalogo-imagen">
+                    <img src="{% static 'img/mercado.png' %}"
+                         alt="Mercados familiares">
+                </div>
+                <h3>Mercados familiares</h3>
+                <p>Productos para el hogar</p>
+            </article>
+
+        </div>
+
     </div>
 
-    <div class="tarjeta">
-        <h3>Ventas</h3>
-        <p>Registrar ventas de contado y crédito.</p>
+
+    <!-- SEGUNDA SECCIÓN -->
+    <div class="catalogo-bloque">
+
+        <div class="catalogo-titulo">
+            <h2>· Nuestros productos ·</h2>
+            <p>Calidad y variedad para nuestros clientes</p>
+        </div>
+
+        <div class="catalogo-grid">
+
+            <article class="catalogo-producto">
+                <div class="catalogo-imagen">
+                    <img src="{% static 'img/mercado.png' %}"
+                         alt="Mercados">
+                </div>
+                <h3>Mercados</h3>
+                <p>Compras para tu hogar</p>
+            </article>
+
+            <article class="catalogo-producto">
+                <div class="catalogo-imagen">
+                    <img src="{% static 'img/jamon.png' %}"
+                         alt="Charcutería">
+                </div>
+                <h3>Charcutería</h3>
+                <p>Productos seleccionados</p>
+            </article>
+
+            <article class="catalogo-producto">
+                <div class="catalogo-imagen">
+                    <img src="{% static 'img/chorizo.png' %}"
+                         alt="Embutidos">
+                </div>
+                <h3>Embutidos</h3>
+                <p>Variedad para tus comidas</p>
+            </article>
+
+            <article class="catalogo-producto">
+                <div class="catalogo-imagen">
+                    <img src="{% static 'img/combo.png' %}"
+                         alt="Combos">
+                </div>
+                <h3>Combos</h3>
+                <p>Opciones especiales</p>
+            </article>
+
+        </div>
+
     </div>
 
-    <div class="tarjeta">
-        <h3>Cuentas pendientes</h3>
-        <p>Consultar deudas y registrar abonos.</p>
+    <!-- BOTÓN FUTURA TIENDA -->
+    <div class="catalogo-ver-todos">
+        <span class="boton-ver-productos">
+            VER TODOS LOS PRODUCTOS
+        </span>
     </div>
 
-</div>
+</section>
+
+
+<!-- Sección de créditos -->
+<section class="seccion-credito" id="creditos">
+    <div class="credito-contenido">
+        <span>SERVICIO PARA NUESTROS CLIENTES</span>
+
+        <h2>
+            Tu mercado, nuestra confianza
+        </h2>
+
+        <p>
+            Nuestro sistema permite llevar el control
+            de mercados fiados, cuentas pendientes,
+            abonos e historial de pagos.
+        </p>
+
+        <a href="{% url 'admin:login' %}" class="boton-dorado">
+            INGRESO ADMINISTRATIVO
+        </a>
+    </div>
+</section>
+
+<!-- Cierre de la página -->
+<section class="mensaje-final">
+    <h2>Calidad para tu mesa, confianza para tu hogar</h2>
+    <p>
+        Trabajamos para brindar una experiencia
+        de compra organizada y cercana.
+    </p>
+</section>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const pista = document.querySelector('.ofertas-pista');
+    const puntos = document.querySelectorAll('.oferta-punto');
+
+    if (!pista) return;
+
+    let actual = 0;
+    let temporizador;
+
+    function mostrarOferta(numero) {
+        actual = (numero + puntos.length) % puntos.length;
+
+        pista.style.transform = `translateX(-${actual * 100}%)`;
+
+        puntos.forEach((punto, i) => {
+            punto.classList.toggle('activo', i === actual);
+            punto.setAttribute(
+                'aria-current',
+                i === actual ? 'true' : 'false'
+            );
+        });
+    }
+
+    function iniciarCarrusel() {
+        clearInterval(temporizador);
+
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            temporizador = setInterval(function () {
+                mostrarOferta(actual + 1);
+            }, 5000);
+        }
+    }
+
+    document.querySelector('.oferta-anterior')
+        .addEventListener('click', function () {
+            mostrarOferta(actual - 1);
+            iniciarCarrusel();
+        });
+
+    document.querySelector('.oferta-siguiente')
+        .addEventListener('click', function () {
+            mostrarOferta(actual + 1);
+            iniciarCarrusel();
+        });
+
+    puntos.forEach((punto, i) => {
+        punto.addEventListener('click', function () {
+            mostrarOferta(i);
+            iniciarCarrusel();
+        });
+    });
+
+    const contenedor = document.querySelector('.ofertas-contenedor');
+
+    contenedor.addEventListener('mouseenter', function () {
+        clearInterval(temporizador);
+    });
+
+    contenedor.addEventListener('mouseleave', iniciarCarrusel);
+
+    iniciarCarrusel();
+});
+</script>
 
 {% endblock %}

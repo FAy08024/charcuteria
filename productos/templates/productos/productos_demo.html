@@ -1,0 +1,683 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Administrar Productos | Charcutería{% endblock %}
+
+{% block content %}
+
+<section class="gp-pagina">
+    <div class="gp-contenedor">
+
+        <!-- ENCABEZADO -->
+        <header class="gp-banner">
+            <div>
+                <span>✦ CHARCUTERÍA · ADMINISTRACIÓN ✦</span>
+                <h1>Administración de Productos</h1>
+                <p>
+                    Gestiona los precios, las descripciones,
+                    los descuentos y los combos especiales.
+                </p>
+            </div>
+            <span class="gp-copo" aria-hidden="true">❄</span>
+        </header>
+
+        <div class="gp-navegacion">
+            <a href="{% url 'panel_usuario' %}">
+                ← Volver al panel
+            </a>
+            <span>DATOS DE DEMOSTRACIÓN</span>
+        </div>
+
+        <!-- CONTADORES -->
+        <div class="gp-resumen">
+            <div class="gp-resumen-card">
+                <span>📦 Productos</span>
+                <strong id="gpTotalProductos">0</strong>
+            </div>
+
+            <div class="gp-resumen-card">
+                <span>🏷️ Con descuentos</span>
+                <strong id="gpTotalDescuentos">0</strong>
+            </div>
+
+            <div class="gp-resumen-card">
+                <span>🎁 Combos creados</span>
+                <strong id="gpTotalCombos">0</strong>
+            </div>
+        </div>
+
+        <!-- HERRAMIENTAS -->
+        <div class="gp-herramientas">
+            <div>
+                <h2>Nuestros productos</h2>
+                <p>
+                    Selecciona una tarjeta para modificar sus datos.
+                </p>
+            </div>
+
+            <button type="button" id="gpAbrirCombo"
+                    class="gp-boton-combo">
+                + Crear combo especial
+            </button>
+        </div>
+
+        <div class="gp-filtros">
+            <input
+                type="search"
+                id="gpBuscar"
+                placeholder="Buscar producto..."
+                aria-label="Buscar producto"
+            >
+
+            <select id="gpCategoria" aria-label="Filtrar categoría">
+                <option value="todos">Todas las categorías</option>
+                <option value="Jamones">Jamones</option>
+                <option value="Quesos">Quesos</option>
+                <option value="Chorizos">Chorizos</option>
+                <option value="Mercados">Mercados</option>
+                <option value="Combos">Combos</option>
+            </select>
+        </div>
+
+        <!-- TARJETAS -->
+        <div id="gpGrid" class="gp-grid"></div>
+
+        <p id="gpSinResultados" class="gp-vacio" hidden>
+            No se encontraron productos.
+        </p>
+
+        <div class="gp-aviso">
+            ❄ Esta es una demostración. Los cambios de precios,
+            descripciones y combos no se guardan en SQLite.
+        </div>
+
+    </div>
+</section>
+
+
+<!-- VENTANA EMERGENTE: EDITAR PRODUCTO -->
+<dialog id="gpModalEditar" class="gp-modal"
+        aria-labelledby="gpEditarTitulo">
+
+    <div class="gp-modal-cabecera">
+        <div>
+            <span>✦ GESTIÓN DE PRODUCTOS ✦</span>
+            <h2 id="gpEditarTitulo">Editar producto</h2>
+        </div>
+
+        <button type="button" class="gp-cerrar"
+                data-cerrar="gpModalEditar"
+                aria-label="Cerrar ventana">×</button>
+    </div>
+
+    <form id="gpFormularioEditar">
+
+        <div class="gp-modal-cuerpo">
+
+            <div class="gp-foto-editar">
+                <img id="gpEditarImagen" alt="" hidden>
+                <span id="gpEditarIcono" hidden>📦</span>
+            </div>
+
+            <div class="gp-campos">
+                <span id="gpEditarCodigo" class="gp-codigo"></span>
+                <h3 id="gpEditarNombre"></h3>
+
+                <label for="gpEditarPrecio">Precio original (COP)</label>
+                <input
+                    type="number"
+                    id="gpEditarPrecio"
+                    min="0"
+                    step="1"
+                    required
+                >
+
+                <label for="gpEditarDescripcion">Descripción</label>
+                <textarea
+                    id="gpEditarDescripcion"
+                    rows="4"
+                    maxlength="500"
+                    required
+                ></textarea>
+
+                <label for="gpEditarDescuento">Descuento (%)</label>
+                <input
+                    type="number"
+                    id="gpEditarDescuento"
+                    min="0"
+                    max="100"
+                    step="1"
+                    required
+                >
+
+                <p id="gpReglaCombo" class="gp-nota" hidden>
+                    Este combo mantiene el descuento automático
+                    del 20 %. Su precio base depende de sus
+                    productos.
+                </p>
+
+                <div class="gp-precio-final">
+                    <span>Precio final con descuento</span>
+                    <strong id="gpEditarFinal">$0</strong>
+                </div>
+
+                <button type="submit" class="gp-guardar">
+                    Guardar cambios
+                </button>
+            </div>
+
+        </div>
+
+    </form>
+</dialog>
+
+
+<!-- VENTANA EMERGENTE: CREAR COMBO -->
+<dialog id="gpModalCombo" class="gp-modal gp-modal-combo"
+        aria-labelledby="gpComboTitulo">
+
+    <div class="gp-modal-cabecera">
+        <div>
+            <span>✦ PROMOCIONES ESPECIALES ✦</span>
+            <h2 id="gpComboTitulo">Crear combo navideño 🎁</h2>
+        </div>
+
+        <button type="button" class="gp-cerrar"
+                data-cerrar="gpModalCombo"
+                aria-label="Cerrar ventana">×</button>
+    </div>
+
+    <form id="gpFormularioCombo" class="gp-combo-cuerpo">
+
+        <div class="gp-combo-decoracion" aria-hidden="true">
+            ❄ 🎁 ❄
+        </div>
+
+        <p>
+            Selecciona dos productos y crea una oferta
+            especial con un descuento automático del 20 %.
+        </p>
+
+        <label for="gpComboNombre">Nombre del combo</label>
+        <input
+            type="text"
+            id="gpComboNombre"
+            value="Combo Jamón + Queso"
+            maxlength="100"
+            required
+        >
+
+        <label for="gpProductoUno">Primer producto</label>
+        <select id="gpProductoUno" required></select>
+
+        <label for="gpProductoDos">Segundo producto</label>
+        <select id="gpProductoDos" required></select>
+
+        <p id="gpComboError" class="gp-error" role="alert" hidden>
+            Debes seleccionar dos productos diferentes.
+        </p>
+
+        <div class="gp-calculo-combo">
+            <h3>Resumen del combo</h3>
+
+            <div class="gp-calculo-linea">
+                <span>Precio de los productos</span>
+                <strong id="gpComboSubtotal">$0</strong>
+            </div>
+
+            <div class="gp-calculo-linea">
+                <span>Descuento automático</span>
+                <strong class="gp-descuento-verde">20 %</strong>
+            </div>
+
+            <div class="gp-calculo-linea">
+                <span>Ahorras</span>
+                <strong id="gpComboAhorro">$0</strong>
+            </div>
+
+            <div class="gp-calculo-total">
+                <span>Precio final del combo</span>
+                <strong id="gpComboTotal">$0</strong>
+            </div>
+        </div>
+
+        <button type="submit" id="gpCrearCombo"
+                class="gp-guardar">
+            🎁 Crear combo con 20 % de descuento
+        </button>
+
+    </form>
+</dialog>
+
+
+<!-- DATOS DJANGO PARA JAVASCRIPT -->
+{{ productos|json_script:"gpDatosProductos" }}
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    let productos = JSON.parse(
+        document.getElementById('gpDatosProductos').textContent
+    );
+
+    let productoActual = null;
+    let contadorCombos = 1;
+
+    const grid = document.getElementById('gpGrid');
+    const buscar = document.getElementById('gpBuscar');
+    const categoria = document.getElementById('gpCategoria');
+
+    const modalEditar = document.getElementById('gpModalEditar');
+    const modalCombo = document.getElementById('gpModalCombo');
+
+    const precioInput = document.getElementById('gpEditarPrecio');
+    const descuentoInput = document.getElementById('gpEditarDescuento');
+    const descripcionInput = document.getElementById('gpEditarDescripcion');
+
+    const productoUno = document.getElementById('gpProductoUno');
+    const productoDos = document.getElementById('gpProductoDos');
+
+    const nombreCombo = document.getElementById('gpComboNombre');
+    const botonCrear = document.getElementById('gpCrearCombo');
+    const errorCombo = document.getElementById('gpComboError');
+
+    const imagenCombo = "{% static 'img/combo.png' %}";
+
+    function pesos(valor) {
+        return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            maximumFractionDigits: 0
+        }).format(valor);
+    }
+
+    function precioFinal(producto) {
+        return Math.round(
+            producto.precio * (1 - producto.descuento / 100)
+        );
+    }
+
+    function elemento(etiqueta, clase, contenido) {
+        const nodo = document.createElement(etiqueta);
+
+        if (clase) nodo.className = clase;
+
+        if (contenido !== undefined) {
+            nodo.textContent = contenido;
+        }
+
+        return nodo;
+    }
+
+    // CREAR UNA TARJETA DE PRODUCTO
+    function crearTarjeta(producto) {
+
+        const tarjeta = elemento('button', 'gp-tarjeta');
+        tarjeta.type = 'button';
+
+        const foto = elemento('div', 'gp-tarjeta-foto');
+
+        if (producto.imagen) {
+            const img = document.createElement('img');
+            img.src = producto.imagen;
+            img.alt = producto.nombre;
+            img.loading = 'lazy';
+            foto.appendChild(img);
+        } else {
+            foto.appendChild(
+                elemento('span', 'gp-emoji', producto.icono || '📦')
+            );
+        }
+
+        if (producto.descuento > 0) {
+            foto.appendChild(
+                elemento('span', 'gp-oferta', '-' + producto.descuento + '%')
+            );
+        }
+
+        const informacion = elemento('div', 'gp-tarjeta-info');
+
+        informacion.append(
+            elemento('small', 'gp-codigo', producto.codigo),
+            elemento('h3', '', producto.nombre),
+            elemento('span', 'gp-categoria', producto.categoria),
+            elemento('p', 'gp-descripcion', producto.descripcion)
+        );
+
+        const precios = elemento('div', 'gp-tarjeta-precios');
+
+        if (producto.descuento > 0) {
+            precios.appendChild(
+                elemento('del', '', pesos(producto.precio))
+            );
+        }
+
+        precios.appendChild(
+            elemento('strong', '', pesos(precioFinal(producto)))
+        );
+
+        informacion.append(
+            precios,
+            elemento('span', 'gp-editar-enlace', '✎ Editar producto')
+        );
+
+        tarjeta.append(foto, informacion);
+
+        tarjeta.addEventListener('click', function () {
+            abrirEditar(producto.id);
+        });
+
+        return tarjeta;
+    }
+
+    // DIBUJAR LOS PRODUCTOS
+    function mostrarProductos() {
+
+        grid.replaceChildren();
+
+        const texto = buscar.value.toLowerCase().trim();
+        const filtro = categoria.value;
+
+        let encontrados = 0;
+
+        productos.forEach(function (producto) {
+
+            const coincideTexto =
+                producto.nombre.toLowerCase().includes(texto) ||
+                producto.codigo.toLowerCase().includes(texto) ||
+                producto.descripcion.toLowerCase().includes(texto);
+
+            const coincideCategoria =
+                filtro === 'todos' ||
+                producto.categoria === filtro;
+
+            if (coincideTexto && coincideCategoria) {
+                grid.appendChild(crearTarjeta(producto));
+                encontrados++;
+            }
+        });
+
+        document.getElementById('gpSinResultados').hidden =
+            encontrados > 0;
+
+        document.getElementById('gpTotalProductos').textContent =
+            productos.length;
+
+        document.getElementById('gpTotalDescuentos').textContent =
+            productos.filter(p => p.descuento > 0).length;
+
+        document.getElementById('gpTotalCombos').textContent =
+            productos.filter(p => p.tipo === 'combo').length;
+    }
+
+    // PREVISUALIZAR EL PRECIO AL EDITAR
+    function actualizarPrecioEditar() {
+
+        const precio = Number(precioInput.value);
+        const descuento = Number(descuentoInput.value);
+
+        const total = precio * (1 - descuento / 100);
+
+        document.getElementById('gpEditarFinal').textContent =
+            pesos(Math.max(0, Math.round(total)) || 0);
+    }
+
+    // ABRIR LA VENTANA DE EDICIÓN
+    function abrirEditar(id) {
+
+        productoActual = productos.find(p => p.id === id);
+
+        if (!productoActual) return;
+
+        document.getElementById('gpEditarNombre').textContent =
+            productoActual.nombre;
+
+        document.getElementById('gpEditarCodigo').textContent =
+            productoActual.codigo;
+
+        precioInput.value = productoActual.precio;
+        descripcionInput.value = productoActual.descripcion;
+        descuentoInput.value = productoActual.descuento;
+
+        const esCombo = productoActual.tipo === 'combo';
+
+        precioInput.readOnly = esCombo;
+        descuentoInput.readOnly = esCombo;
+
+        document.getElementById('gpReglaCombo').hidden = !esCombo;
+
+        const foto = document.getElementById('gpEditarImagen');
+        const icono = document.getElementById('gpEditarIcono');
+
+        if (productoActual.imagen) {
+            foto.src = productoActual.imagen;
+            foto.alt = productoActual.nombre;
+            foto.hidden = false;
+            icono.hidden = true;
+        } else {
+            foto.hidden = true;
+            foto.removeAttribute('src');
+            icono.textContent = productoActual.icono || '📦';
+            icono.hidden = false;
+        }
+
+        actualizarPrecioEditar();
+        modalEditar.showModal();
+    }
+
+    // RECALCULAR COMBOS SI CAMBIA UN PRECIO
+    function recalcularCombos() {
+
+        productos.filter(p => p.tipo === 'combo').forEach(function (combo) {
+
+            combo.precio = combo.componentes.reduce(
+                function (total, id) {
+                    const producto = productos.find(p => p.id === id);
+                    return total + (producto ? producto.precio : 0);
+                },
+                0
+            );
+        });
+    }
+
+    // GUARDAR CAMBIOS EN LA DEMOSTRACIÓN
+    document.getElementById('gpFormularioEditar')
+        .addEventListener('submit', function (evento) {
+
+            evento.preventDefault();
+
+            if (!productoActual) return;
+
+            const precio = Number(precioInput.value);
+            const descuento = Number(descuentoInput.value);
+            const descripcion = descripcionInput.value.trim();
+
+            if (!descripcion) return;
+
+            if (productoActual.tipo !== 'combo') {
+
+                if (!Number.isSafeInteger(precio) ||
+                    precio < 0 ||
+                    !Number.isInteger(descuento) ||
+                    descuento < 0 ||
+                    descuento > 100) {
+                    return;
+                }
+
+                productoActual.precio = precio;
+                productoActual.descuento = descuento;
+            }
+
+            productoActual.descripcion = descripcion;
+
+            recalcularCombos();
+            mostrarProductos();
+            modalEditar.close();
+        });
+
+    precioInput.addEventListener('input', actualizarPrecioEditar);
+    descuentoInput.addEventListener('input', actualizarPrecioEditar);
+
+    // PREPARAR LOS SELECTORES DEL COMBO
+    function prepararCombo() {
+
+        const individuales = productos.filter(
+            p => p.tipo === 'individual'
+        );
+
+        productoUno.replaceChildren();
+        productoDos.replaceChildren();
+
+        individuales.forEach(function (producto) {
+
+            const opcion1 = new Option(
+                producto.nombre + ' · ' + pesos(producto.precio),
+                producto.id
+            );
+
+            const opcion2 = new Option(
+                producto.nombre + ' · ' + pesos(producto.precio),
+                producto.id
+            );
+
+            productoUno.add(opcion1);
+            productoDos.add(opcion2);
+        });
+
+        // POR DEFECTO: JAMÓN Y QUESO
+        productoUno.value = '1';
+        productoDos.value = '2';
+
+        nombreCombo.value = 'Combo Jamón + Queso';
+
+        actualizarPrecioCombo();
+    }
+
+    // DESCUENTO AUTOMÁTICO DEL 20 %
+    function actualizarPrecioCombo() {
+
+        const uno = productos.find(
+            p => String(p.id) === productoUno.value
+        );
+
+        const dos = productos.find(
+            p => String(p.id) === productoDos.value
+        );
+
+        const valido = uno && dos && uno.id !== dos.id;
+
+        errorCombo.hidden = Boolean(valido);
+        botonCrear.disabled = !valido;
+
+        const subtotal = valido ? uno.precio + dos.precio : 0;
+        const ahorro = Math.round(subtotal * 0.20);
+        const total = subtotal - ahorro;
+
+        document.getElementById('gpComboSubtotal').textContent =
+            pesos(subtotal);
+
+        document.getElementById('gpComboAhorro').textContent =
+            pesos(ahorro);
+
+        document.getElementById('gpComboTotal').textContent =
+            pesos(total);
+    }
+
+    document.getElementById('gpAbrirCombo')
+        .addEventListener('click', function () {
+
+            prepararCombo();
+            modalCombo.showModal();
+        });
+
+    productoUno.addEventListener('change', actualizarPrecioCombo);
+    productoDos.addEventListener('change', actualizarPrecioCombo);
+
+    // CREAR UN COMBO EN MEMORIA
+    document.getElementById('gpFormularioCombo')
+        .addEventListener('submit', function (evento) {
+
+            evento.preventDefault();
+
+            const uno = productos.find(
+                p => String(p.id) === productoUno.value
+            );
+
+            const dos = productos.find(
+                p => String(p.id) === productoDos.value
+            );
+
+            if (!uno || !dos || uno.id === dos.id) return;
+
+            const nombre = nombreCombo.value.trim();
+
+            if (!nombre) return;
+
+            const numero = String(contadorCombos).padStart(3, '0');
+
+            const combo = {
+                id: 'combo-' + contadorCombos,
+                codigo: 'COM-' + numero,
+                nombre: nombre,
+                categoria: 'Combos',
+                descripcion: 'Incluye ' + uno.nombre + ' y ' +
+                    dos.nombre + '. Promoción especial del 20%.',
+                precio: uno.precio + dos.precio,
+                descuento: 20,
+                imagen: imagenCombo,
+                icono: '🎁',
+                tipo: 'combo',
+                componentes: [uno.id, dos.id]
+            };
+
+            productos.push(combo);
+            contadorCombos++;
+
+            buscar.value = '';
+            categoria.value = 'todos';
+
+            mostrarProductos();
+            modalCombo.close();
+        });
+
+    // CERRAR VENTANAS
+    document.querySelectorAll('[data-cerrar]')
+        .forEach(function (boton) {
+
+            boton.addEventListener('click', function () {
+                document.getElementById(
+                    boton.dataset.cerrar
+                ).close();
+            });
+        });
+
+    // CERRAR AL PULSAR FUERA
+    [modalEditar, modalCombo].forEach(function (modal) {
+
+        modal.addEventListener('click', function (evento) {
+
+            if (evento.target !== modal) return;
+
+            const rect = modal.getBoundingClientRect();
+
+            const fuera =
+                evento.clientX < rect.left ||
+                evento.clientX > rect.right ||
+                evento.clientY < rect.top ||
+                evento.clientY > rect.bottom;
+
+            if (fuera) modal.close();
+        });
+    });
+
+    buscar.addEventListener('input', mostrarProductos);
+    categoria.addEventListener('change', mostrarProductos);
+
+    mostrarProductos();
+
+});
+</script>
+
+{% endblock %}

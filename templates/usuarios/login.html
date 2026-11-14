@@ -1,0 +1,140 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Iniciar Sesión | Charcutería{% endblock %}
+
+{% block content %}
+
+<section class="login-pagina">
+
+    <div class="login-contenedor">
+
+        <!-- PANEL DE BIENVENIDA -->
+        <div class="login-presentacion">
+
+            <div class="login-marca">
+                <span class="login-simbolo">C</span>
+                <span>CHARCUTERÍA</span>
+            </div>
+
+            <div class="login-bienvenida">
+
+                <span class="login-etiqueta">
+                    ✦ SISTEMA DE GESTIÓN ✦
+                </span>
+
+                <h1>
+                    Bienvenido a<br>
+                    nuestra Charcutería
+                </h1>
+
+                <p>
+                    Un espacio diseñado para gestionar
+                    nuestros clientes, productos,
+                    inventario, ventas y cuentas
+                    pendientes.
+                </p>
+
+                <div class="login-linea"></div>
+
+                <p class="login-frase">
+                    Calidad, tradición y confianza
+                    en cada compra.
+                </p>
+
+            </div>
+
+            <div class="login-navidad" aria-hidden="true">
+                ❄
+            </div>
+
+        </div>
+
+
+        <!-- FORMULARIO DE LOGIN -->
+        <div class="login-formulario">
+
+            <div class="login-formulario-contenido">
+
+                <div class="login-icono">
+                    <span>C</span>
+                </div>
+
+                <h2>Iniciar sesión</h2>
+
+                <p class="login-subtitulo">
+                    Acceso para personal autorizado
+                </p>
+
+                {% if error %}
+                    <div class="login-error" role="alert">
+                        {{ error }}
+                    </div>
+                {% endif %}
+
+                <form method="POST" action="{% url 'login' %}">
+
+                    {% csrf_token %}
+
+                    <div class="login-campo">
+                        <label for="username">
+                            USUARIO
+                        </label>
+
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            placeholder="Ingresa tu usuario"
+                            autocomplete="username"
+                            required
+                            autofocus
+                        >
+                    </div>
+
+                    <div class="login-campo">
+                        <label for="password">
+                            CONTRASEÑA
+                        </label>
+
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Ingresa tu contraseña"
+                            autocomplete="current-password"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="login-boton">
+                        INGRESAR AL SISTEMA
+                    </button>
+
+                </form>
+
+                <div class="login-regresar">
+                    <a href="{% url 'inicio' %}">
+                        ← Volver al inicio
+                    </a>
+                </div>
+
+                <div class="login-pie">
+                    <p>
+                        Sistema de Gestión para Charcutería
+                    </p>
+                    <span>
+                        Administración y personal autorizado
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

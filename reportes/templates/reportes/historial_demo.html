@@ -1,0 +1,431 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Historial | Charcutería{% endblock %}
+
+{% block content %}
+
+<section class="hist-pagina">
+    <div class="hist-contenedor">
+
+        <!-- ENCABEZADO NAVIDEÑO -->
+        <header class="hist-banner">
+            <div>
+                <span class="hist-etiqueta">
+                    ✦ CHARCUTERÍA · SISTEMA DE GESTIÓN ✦
+                </span>
+
+                <h1>Historial de movimientos</h1>
+
+                <p>
+                    Consulta las ventas, facturas y abonos
+                    de nuestros clientes.
+                </p>
+            </div>
+
+            <div class="hist-navidad" aria-hidden="true">❄</div>
+        </header>
+
+        <div class="hist-navegacion">
+            <a href="{% url 'panel_usuario' %}">
+                ← Volver al panel de control
+            </a>
+            <span>DATOS DE DEMOSTRACIÓN Y REGISTROS REALES</span>
+        </div>
+
+        <div class="hist-distribucion">
+
+            <!-- IZQUIERDA: CLIENTES (40%) -->
+            <aside class="hist-clientes">
+
+                <div class="hist-clientes-titulo">
+                    <h2>Clientes</h2>
+                    <p>Selecciona un cliente para consultar su historial.</p>
+                </div>
+
+                <input
+                    type="search"
+                    class="hist-buscador"
+                    id="histBuscarClientes"
+                    placeholder="Buscar cliente..."
+                    aria-label="Buscar clientes"
+                >
+
+                <div class="hist-clientes-lista">
+
+                    {% for cliente in clientes %}
+
+                    <button
+                        type="button"
+                        class="hist-cliente {% if forloop.first %}activo{% endif %}"
+                        data-id="{{ cliente.id }}"
+                        data-nombre="{{ cliente.nombre }}"
+                        data-codigo="{{ cliente.codigo }}"
+                        data-tipo="{{ cliente.tipo }}"
+                        data-fecha="{{ cliente.fecha }}"
+                        data-foto="{% if cliente.foto %}{% static cliente.foto %}{% endif %}"
+                        data-iniciales="{{ cliente.iniciales }}"
+                        data-ventas="{{ cliente.cantidad_ventas }}"
+                        data-facturas="{{ cliente.cantidad_facturas }}"
+                        data-abonos="{{ cliente.cantidad_abonos }}"
+                        aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}"
+                    >
+
+                        <div class="hist-cliente-avatar">
+
+                            {% if cliente.foto %}
+                                <img
+                                    src="{% static cliente.foto %}"
+                                    alt="Foto de {{ cliente.nombre }}"
+                                >
+                            {% else %}
+                                {{ cliente.iniciales }}
+                            {% endif %}
+
+                        </div>
+
+                        <div class="hist-cliente-datos">
+                            <strong>{{ cliente.nombre }}</strong>
+                            <small>{{ cliente.codigo }} · {{ cliente.tipo }}</small>
+                            <span>Registro: {{ cliente.fecha }}</span>
+                        </div>
+
+                        <span class="hist-flecha">›</span>
+
+                    </button>
+
+                    {% endfor %}
+
+                </div>
+            </aside>
+
+            <!-- DERECHA: HISTORIAL (60%) -->
+            <div class="hist-derecha">
+
+                <!-- PERFIL DEL CLIENTE -->
+                <div class="hist-perfil">
+
+                    <div class="hist-perfil-avatar">
+
+                        <img
+                            id="histFoto"
+                            {% if cliente_inicial.foto %}
+                                src="{% static cliente_inicial.foto %}"
+                            {% else %}
+                                hidden
+                            {% endif %}
+                            alt=""
+                        >
+
+                        <span
+                            id="histIniciales"
+                            {% if cliente_inicial.foto %}hidden{% endif %}
+                        >
+                            {{ cliente_inicial.iniciales }}
+                        </span>
+
+                    </div>
+
+                    <div class="hist-perfil-datos">
+
+                        <span>HISTORIAL DEL CLIENTE</span>
+
+                        <h2 id="histNombre">
+                            {{ cliente_inicial.nombre }}
+                        </h2>
+
+                        <p id="histCodigo">
+                            {{ cliente_inicial.codigo }} · {{ cliente_inicial.tipo }}
+                        </p>
+
+                        <small id="histFecha">
+                            Registrado: {{ cliente_inicial.fecha }}
+                        </small>
+
+                    </div>
+
+                </div>
+
+                <!-- RESUMEN -->
+                <div class="hist-resumen">
+
+                    <div class="hist-resumen-card">
+                        <span>VENTAS</span>
+                        <strong id="histTotalVentas">
+                            {{ cliente_inicial.cantidad_ventas }}
+                        </strong>
+                    </div>
+
+                    <div class="hist-resumen-card">
+                        <span>FACTURAS</span>
+                        <strong id="histTotalFacturas">
+                            {{ cliente_inicial.cantidad_facturas }}
+                        </strong>
+                    </div>
+
+                    <div class="hist-resumen-card">
+                        <span>ABONOS</span>
+                        <strong id="histTotalAbonos">
+                            {{ cliente_inicial.cantidad_abonos }}
+                        </strong>
+                    </div>
+
+                </div>
+
+                <!-- FILTROS -->
+                <div class="hist-filtros">
+
+                    <button type="button"
+                            class="hist-filtro activo"
+                            data-tipo="todos"
+                            aria-pressed="true">
+                        Todos
+                    </button>
+
+                    <button type="button"
+                            class="hist-filtro"
+                            data-tipo="venta"
+                            aria-pressed="false">
+                        Ventas
+                    </button>
+
+                    <button type="button"
+                            class="hist-filtro"
+                            data-tipo="factura"
+                            aria-pressed="false">
+                        Facturas
+                    </button>
+
+                    <button type="button"
+                            class="hist-filtro"
+                            data-tipo="abono"
+                            aria-pressed="false">
+                        Abonos
+                    </button>
+
+                </div>
+
+                <div class="hist-busqueda">
+                    <input
+                        type="search"
+                        id="histBuscarMovimientos"
+                        placeholder="Buscar número o descripción..."
+                        aria-label="Buscar movimientos"
+                    >
+                </div>
+
+                <!-- LISTA DE MOVIMIENTOS -->
+                <div class="hist-lista">
+
+                    {% for movimiento in movimientos %}
+
+                    <article
+                        class="hist-movimiento"
+                        data-cliente="{{ movimiento.cliente_id }}"
+                        data-tipo="{{ movimiento.tipo }}"
+                        data-busqueda="{{ movimiento.numero|lower }} {{ movimiento.descripcion|lower }} {{ movimiento.detalle|lower }}"
+                    >
+
+                        <div class="hist-movimiento-icono hist-icono-{{ movimiento.tipo }}">
+
+                            {% if movimiento.tipo == 'venta' %}
+                                🛒
+                            {% elif movimiento.tipo == 'factura' %}
+                                🧾
+                            {% else %}
+                                💰
+                            {% endif %}
+
+                        </div>
+
+                        <div class="hist-movimiento-info">
+
+                            <div class="hist-movimiento-superior">
+
+                                <strong>{{ movimiento.numero }}</strong>
+
+                                <span class="hist-estado
+                                    {% if movimiento.estado == 'Pendiente' %}
+                                        hist-estado-pendiente
+                                    {% elif movimiento.estado == 'Pagada' %}
+                                        hist-estado-pagada
+                                    {% else %}
+                                        hist-estado-realizada
+                                    {% endif %}
+                                ">
+                                    {{ movimiento.estado }}
+                                </span>
+
+                            </div>
+
+                            <h3>{{ movimiento.descripcion }}</h3>
+
+                            <p>{{ movimiento.detalle }}</p>
+
+                            <small>{{ movimiento.fecha }}</small>
+
+                        </div>
+
+                        <strong class="hist-valor">
+                            {{ movimiento.valor_formato }}
+                        </strong>
+
+                    </article>
+
+                    {% endfor %}
+
+                </div>
+
+                <div class="hist-vacio" id="histVacio" hidden>
+                    <span>❄</span>
+                    <p>No hay movimientos para mostrar.</p>
+                </div>
+
+                <div class="hist-pie">
+                    Historial de clientes · Ventas, facturas y abonos
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<!-- INTERACTIVIDAD -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const clientes = document.querySelectorAll('.hist-cliente');
+    const movimientos = document.querySelectorAll('.hist-movimiento');
+    const filtros = document.querySelectorAll('.hist-filtro');
+
+    const buscarClientes = document.getElementById('histBuscarClientes');
+    const buscarMovimientos = document.getElementById('histBuscarMovimientos');
+
+    const nombre = document.getElementById('histNombre');
+    const codigo = document.getElementById('histCodigo');
+    const fecha = document.getElementById('histFecha');
+
+    const foto = document.getElementById('histFoto');
+    const iniciales = document.getElementById('histIniciales');
+
+    const ventas = document.getElementById('histTotalVentas');
+    const facturas = document.getElementById('histTotalFacturas');
+    const abonos = document.getElementById('histTotalAbonos');
+    const vacio = document.getElementById('histVacio');
+
+    let clienteActual = clientes[0]?.dataset.id || '';
+    let tipoActual = 'todos';
+
+    function actualizarMovimientos() {
+        let encontrados = 0;
+
+        const busqueda = buscarMovimientos.value.toLowerCase().trim();
+
+        movimientos.forEach(function (movimiento) {
+
+            const coincideCliente =
+                movimiento.dataset.cliente === clienteActual;
+
+            const coincideTipo =
+                tipoActual === 'todos' ||
+                movimiento.dataset.tipo === tipoActual;
+
+            const coincideBusqueda =
+                movimiento.dataset.busqueda.includes(busqueda);
+
+            const mostrar =
+                coincideCliente && coincideTipo && coincideBusqueda;
+
+            movimiento.hidden = !mostrar;
+
+            if (mostrar) encontrados++;
+        });
+
+        vacio.hidden = encontrados > 0;
+    }
+
+    clientes.forEach(function (cliente) {
+
+        cliente.addEventListener('click', function () {
+
+            clienteActual = cliente.dataset.id;
+
+            clientes.forEach(function (otro) {
+                otro.classList.remove('activo');
+                otro.setAttribute('aria-pressed', 'false');
+            });
+
+            cliente.classList.add('activo');
+            cliente.setAttribute('aria-pressed', 'true');
+
+            nombre.textContent = cliente.dataset.nombre;
+
+            codigo.textContent =
+                cliente.dataset.codigo + ' · ' + cliente.dataset.tipo;
+
+            fecha.textContent =
+                'Registrado: ' + cliente.dataset.fecha;
+
+            ventas.textContent = cliente.dataset.ventas;
+            facturas.textContent = cliente.dataset.facturas;
+            abonos.textContent = cliente.dataset.abonos;
+
+            if (cliente.dataset.foto) {
+                foto.src = cliente.dataset.foto;
+                foto.alt = 'Foto de ' + cliente.dataset.nombre;
+                foto.hidden = false;
+                iniciales.hidden = true;
+            } else {
+                foto.hidden = true;
+                foto.removeAttribute('src');
+                iniciales.textContent = cliente.dataset.iniciales;
+                iniciales.hidden = false;
+            }
+
+            buscarMovimientos.value = '';
+            actualizarMovimientos();
+
+        });
+    });
+
+    filtros.forEach(function (filtro) {
+
+        filtro.addEventListener('click', function () {
+
+            tipoActual = filtro.dataset.tipo;
+
+            filtros.forEach(function (otro) {
+                otro.classList.remove('activo');
+                otro.setAttribute('aria-pressed', 'false');
+            });
+
+            filtro.classList.add('activo');
+            filtro.setAttribute('aria-pressed', 'true');
+
+            actualizarMovimientos();
+        });
+    });
+
+    buscarClientes.addEventListener('input', function () {
+        const busqueda = this.value.toLowerCase().trim();
+
+        clientes.forEach(function (cliente) {
+            cliente.hidden = !cliente.dataset.nombre
+                .toLowerCase().includes(busqueda);
+        });
+    });
+
+    buscarMovimientos.addEventListener(
+        'input',
+        actualizarMovimientos
+    );
+
+    actualizarMovimientos();
+
+});
+</script>
+
+{% endblock %}

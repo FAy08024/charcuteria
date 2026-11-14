@@ -1,0 +1,241 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Perfil del Cliente | Charcutería{% endblock %}
+
+{% block content %}
+
+<section class="clientes-pagina">
+
+    <div class="clientes-contenedor">
+
+        <div class="clientes-navegacion">
+            <a href="{% url 'clientes_demo' %}">
+                ← Volver a clientes
+            </a>
+
+            <span class="clientes-demo-etiqueta">
+                PERFIL Y ESTADO DE CUENTA
+            </span>
+        </div>
+
+        <div class="cliente-ficha">
+
+            <div class="cliente-ficha-portada">
+                <span>✦ CHARCUTERÍA ✦</span>
+
+                <span class="ficha-copo" aria-hidden="true">
+                    ❄
+                </span>
+            </div>
+
+            <div class="cliente-ficha-cuerpo">
+
+                <!-- IDENTIDAD -->
+                <div class="cliente-ficha-identidad">
+
+                    <div class="cliente-ficha-avatar">
+
+                        {% if cliente.foto %}
+                            <img src="{% static cliente.foto %}"
+                                 alt="Foto de {{ cliente.nombre }}">
+                        {% else %}
+                            {{ cliente.iniciales }}
+                        {% endif %}
+
+                    </div>
+
+                    <div>
+                        <span class="ficha-subtitulo">
+                            PERFIL DEL CLIENTE
+                        </span>
+
+                        <h1>{{ cliente.nombre }}</h1>
+
+                        <p>{{ cliente.codigo }}</p>
+                    </div>
+
+                </div>
+
+                <!-- DATOS PERSONALES -->
+                <h2>Información del cliente</h2>
+
+                <div class="cliente-ficha-datos">
+
+                    <div class="cliente-dato">
+                        <span>Nombre completo</span>
+                        <strong>{{ cliente.nombre }}</strong>
+                    </div>
+
+                    <div class="cliente-dato">
+                        <span>Fecha de registro</span>
+                        <strong>{{ cliente.fecha }}</strong>
+                    </div>
+
+                    <div class="cliente-dato">
+                        <span>Tipo de cliente</span>
+                        <strong>{{ cliente.tipo }}</strong>
+                    </div>
+
+                    <div class="cliente-dato">
+                        <span>Estado</span>
+                        <strong>{{ cliente.estado }}</strong>
+                    </div>
+
+                    <div class="cliente-dato">
+                        <span>Código de cliente</span>
+                        <strong>{{ cliente.codigo }}</strong>
+                    </div>
+
+                </div>
+
+                <!-- RESUMEN FINANCIERO -->
+                {% if resumen_cuenta %}
+
+                    <section class="cl-finanzas">
+
+                        <div class="cl-finanzas-encabezado">
+                            <span>
+                                ✦ INFORMACIÓN FINANCIERA ✦
+                            </span>
+
+                            <h2>Estado de cuenta</h2>
+
+                            <p>
+                                Créditos y abonos registrados
+                                a nombre de {{ cliente.nombre }}.
+                            </p>
+                        </div>
+
+                        <div class="cl-finanzas-saldo">
+
+                            <span>DEUDA TOTAL PENDIENTE</span>
+
+                            <strong>
+                                {{ resumen_cuenta.saldo_formato }}
+                            </strong>
+
+                            <p>
+                                Saldo actualizado de todas
+                                las cuentas del cliente.
+                            </p>
+
+                        </div>
+
+                        <div class="cl-finanzas-estadisticas">
+
+                            <div>
+                                <span>Créditos registrados</span>
+                                <strong>
+                                    {{ resumen_cuenta.cantidad_creditos }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Créditos pendientes</span>
+                                <strong>
+                                    {{ resumen_cuenta.creditos_pendientes }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Total de obligaciones</span>
+                                <strong>
+                                    {{ resumen_cuenta.total_formato }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Abonos realizados</span>
+                                <strong>
+                                    {{ resumen_cuenta.abonos_formato }}
+                                </strong>
+                            </div>
+
+                        </div>
+
+                        <!-- CRÉDITOS INDIVIDUALES -->
+                        <h2 class="cl-creditos-titulo">
+                            Historial de créditos
+                        </h2>
+
+                        <div class="cl-creditos-lista">
+
+                            {% for credito in creditos_cliente %}
+
+                                <article class="cl-credito-item">
+
+                                    <div>
+                                        <small>
+                                            {{ credito.numero }}
+                                            · {{ credito.inicio }}
+                                        </small>
+
+                                        <h3>
+                                            Crédito por
+                                            {{ credito.capital_formato }}
+                                        </h3>
+
+                                        <p>
+                                            Abonos:
+                                            {{ credito.abonos_formato }}
+                                        </p>
+
+                                        <p>
+                                            {% if credito.saldo > 0 %}
+                                                Estado: Pendiente
+                                            {% else %}
+                                                Estado: Pagado
+                                            {% endif %}
+                                        </p>
+                                    </div>
+
+                                    <div class="cl-credito-derecha">
+
+                                        <span>Saldo restante</span>
+
+                                        <strong>
+                                            {{ credito.saldo_formato }}
+                                        </strong>
+
+                                    </div>
+
+                                </article>
+
+                            {% empty %}
+
+                                <div class="cl-creditos-vacio">
+                                    Este cliente todavía no tiene
+                                    compras a crédito registradas.
+                                </div>
+
+                            {% endfor %}
+
+                        </div>
+
+                    </section>
+
+                {% endif %}
+
+                <div class="cliente-ficha-aviso">
+                    Los datos de identificación son de
+                    demostración. Los créditos nuevos
+                    y sus abonos se obtienen de SQLite,
+                    junto con las cuentas de prueba existentes.
+                </div>
+
+                <a href="{% url 'clientes_demo' %}"
+                   class="cliente-boton-regresar">
+                    VOLVER AL DIRECTORIO
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

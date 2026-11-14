@@ -1,0 +1,86 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Panel de Control | Charcutería{% endblock %}
+
+{% block content %}
+
+<section class="panel-pagina">
+
+    <div class="panel-contenedor">
+
+        <!-- BIENVENIDA -->
+        <div class="panel-bienvenida">
+
+            <div class="panel-bienvenida-texto">
+
+                <span class="panel-etiqueta">
+                    ✦ CHARCUTERÍA ✦
+                </span>
+
+                <h1>
+                    {% block panel_titulo %}
+                    Panel de control
+                    {% endblock %}
+                </h1>
+
+                <p>
+                    {% block panel_descripcion %}
+                    Gestiona las operaciones de la charcutería.
+                    {% endblock %}
+                </p>
+
+                <span class="panel-usuario">
+                    Sesión: {{ user.username }}
+                </span>
+
+            </div>
+
+            <div class="panel-bienvenida-derecha">
+
+                <span class="panel-copo" aria-hidden="true">
+                    ❄
+                </span>
+
+                <span class="panel-rol">
+                    {% block panel_rol %}
+                    Usuario
+                    {% endblock %}
+                </span>
+
+            </div>
+
+        </div>
+
+        <!-- NAVEGACIÓN -->
+        <div class="panel-navegacion">
+
+            <div>
+                <h2>Menú principal</h2>
+                <p>Selecciona el módulo que deseas consultar.</p>
+            </div>
+
+            <a href="{% url 'inicio' %}" class="panel-volver">
+                ← Volver a la tienda
+            </a>
+
+        </div>
+
+        <!-- MÓDULOS -->
+        <div class="panel-grid">
+
+            {% block panel_modulos %}
+            {% endblock %}
+
+        </div>
+
+        <div class="panel-aviso">
+            Los módulos se conectarán con las funciones de
+            Django durante la integración del sistema.
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

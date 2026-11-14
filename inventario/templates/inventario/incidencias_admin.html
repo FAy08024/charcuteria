@@ -1,0 +1,244 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Incidencias del inventario | Charcutería{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/estilos.css' %}?v=15">
+
+<main class="ia-pagina">
+    <div class="ia-contenedor">
+
+        <header class="ia-banner">
+            <div>
+                <small>✦ CHARCUTERÍA · SUPERVISIÓN ✦</small>
+                <h1>Notificaciones del inventario 🔔</h1>
+                <p>Revisa reportes y autoriza los ajustes.</p>
+            </div>
+        </header>
+
+        <nav class="ia-regreso">
+            <a href="{% url 'panel_administrador' %}">
+                ← Panel administrativo
+            </a>
+
+            <a href="{% url 'inventario_demo' %}">
+                Ver inventario
+            </a>
+        </nav>
+
+        {% for message in messages %}
+            <div class="ia-mensaje">{{ message }}</div>
+        {% endfor %}
+
+        <section class="ia-panel">
+
+            <div class="ia-titulo">
+                <small>✦ AVISOS DEL PERSONAL ✦</small>
+                <h2>Incidencias recibidas</h2>
+                <p>
+                    Tienes {{ pendientes }} incidencias
+                    pendientes o en revisión.
+                </p>
+            </div>
+
+            <div class="ia-incidencias">
+
+                {% for incidencia in incidencias %}
+
+                    <article class="ia-incidencia">
+
+                        <div class="ia-incidencia-cabecera">
+
+                            <div>
+                                <small>
+                                    REPORTE #{{ incidencia.id }}
+                                </small>
+
+                                <h3>
+                                    {{ incidencia.producto_nombre }}
+                                </h3>
+
+                                <p>
+                                    {{ incidencia.producto_codigo }}
+                                    · {{ incidencia.get_tipo_display }}
+                                </p>
+                            </div>
+
+                            <span class="ia-estado ia-{{ incidencia.estado }}">
+                                {{ incidencia.get_estado_display }}
+                            </span>
+                        </div>
+
+                        <div class="ia-incidencia-datos">
+
+                            <p>
+                                <strong>Unidades afectadas:</strong>
+                                {{ incidencia.cantidad }}
+                            </p>
+
+                            <p>
+                                <strong>Reportó:</strong>
+                                {% if incidencia.empleado %}
+                                    {{ incidencia.empleado.username }}
+                                {% else %}
+                                    Usuario no disponible
+                                {% endif %}
+                            </p>
+
+                            <p>
+                                <strong>Fecha:</strong>
+                                {{ incidencia.fecha|date:'d/m/Y H:i' }}
+                            </p>
+
+                            <p>
+                                <strong>Descripción:</strong>
+                                {{ incidencia.descripcion }}
+                            </p>
+
+                            {% if incidencia.foto %}
+
+                                <a href="{{ incidencia.foto.url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+
+                                    <img class="ia-evidencia"
+                                         src="{{ incidencia.foto.url }}"
+                                         alt="Fotografía de la incidencia">
+
+                                </a>
+
+                            {% endif %}
+
+                        </div>
+
+                        {% if incidencia.estado == 'pendiente' or incidencia.estado == 'revision' %}
+
+                            <form method="post"
+                                  action="{% url 'resolver_incidencia' incidencia.id %}"
+                                  class="ia-formulario">
+
+                                {% csrf_token %}
+
+                                <label for="iaReemplazo{{ incidencia.id }}">
+                                    Producto de reemplazo
+                                </label>
+
+                                <select
+                                    id="iaReemplazo{{ incidencia.id }}"
+                                    name="codigo_reemplazo"
+                                    class="ia-input">
+
+                                    <option value="">
+                                        Seleccionar si corresponde
+                                    </option>
+
+                                    {% for producto in productos %}
+
+                                        <option value="{{ producto.codigo }}">
+                                            {{ producto.nombre }}
+                                            · {{ producto.codigo }}
+                                        </option>
+
+                                    {% endfor %}
+
+                                </select>
+
+                                <p class="ia-ayuda">
+                                    Solo usa Sustituir cuando ya se haya
+                                    recibido físicamente mercancía sana.
+                                    Se retirarán las unidades afectadas
+                                    y se registrará su reemplazo.
+                                </p>
+
+                                <label for="iaRespuesta{{ incidencia.id }}">
+                                    Respuesta al empleado
+                                </label>
+
+                                <textarea
+                                    id="iaRespuesta{{ incidencia.id }}"
+                                    name="respuesta"
+                                    class="ia-input ia-textarea"
+                                    rows="3"
+                                    maxlength="700"
+                                    placeholder="Explica la decisión tomada..."></textarea>
+
+                                <div class="ia-acciones">
+
+                                    <button type="submit"
+                                            name="accion"
+                                            value="revision"
+                                            class="ia-boton ia-boton-secundario">
+                                        En revisión
+                                    </button>
+
+                                    <button type="submit"
+                                            name="accion"
+                                            value="baja"
+                                            class="ia-boton ia-boton-peligro">
+                                        Retirar unidades
+                                    </button>
+
+                                    <button type="submit"
+                                            name="accion"
+                                            value="reemplazar"
+                                            class="ia-boton ia-boton-dorado">
+                                        Sustituir producto
+                                    </button>
+
+                                    <button type="submit"
+                                            name="accion"
+                                            value="descartar"
+                                            class="ia-boton ia-boton-secundario">
+                                        Descartar reporte
+                                    </button>
+
+                                </div>
+                            </form>
+
+                        {% else %}
+
+                            <div class="ia-respuesta">
+
+                                <strong>Decisión:</strong>
+                                {{ incidencia.get_accion_display }}
+
+                                {% if incidencia.codigo_reemplazo %}
+                                    <p>
+                                        Reemplazo:
+                                        {{ incidencia.codigo_reemplazo }}
+                                    </p>
+                                {% endif %}
+
+                                {% if incidencia.respuesta %}
+                                    <p>{{ incidencia.respuesta }}</p>
+                                {% endif %}
+
+                                {% if incidencia.resuelto_por %}
+                                    <small>
+                                        Resuelto por:
+                                        {{ incidencia.resuelto_por.username }}
+                                    </small>
+                                {% endif %}
+
+                            </div>
+
+                        {% endif %}
+
+                    </article>
+
+                {% empty %}
+
+                    <div class="ia-vacio">
+                        🎄 No hay incidencias registradas 🎄
+                    </div>
+
+                {% endfor %}
+
+            </div>
+        </section>
+
+    </div>
+</main>
+{% endblock %}

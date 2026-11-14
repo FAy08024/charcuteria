@@ -2,36 +2,338 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>{% block title %}Charcutería{% endblock %}</title>
 
+    <!-- Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+
+    <!-- CSS general -->
     <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+
+    {% block extra_css %}{% endblock %}
 </head>
+
 <body>
 
-    <header>
-        <h2>Sistema de Charcutería</h2>
+  
+    <div class="barra-superior">
 
-        <nav>
-            <a href="{% url 'inicio' %}">Inicio</a>
-            <a href="#">Clientes</a>
-            <a href="#">Inventario</a>
-            <a href="#">Ventas</a>
-            <a href="#">Cuentas</a>
-            <a href="#">Reportes</a>
-        </nav>
+        <div class="aviso-movimiento">
+
+            <span>
+                ✦ ENVÍOS GRATIS POR COMPRAS SUPERIORES A $67.67 EN CÚCUTA Y SU ÁREA METROPOLITANA ✦
+            </span>
+
+            <span>
+                ✦ ENVÍOS GRATIS POR COMPRAS SUPERIORES A $67.67 EN CÚCUTA Y SU ÁREA METROPOLITANA ✦
+            </span>
+
+            <span>
+                ✦ ENVÍOS GRATIS POR COMPRAS SUPERIORES A $67.67 EN CÚCUTA Y SU ÁREA METROPOLITANA ✦
+            </span>
+
+            <span>
+                ✦ ENVÍOS GRATIS POR COMPRAS SUPERIORES A $67.67 EN CÚCUTA Y SU ÁREA METROPOLITANA ✦
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================
+         ENCABEZADO PRINCIPAL
+    ====================================== -->
+
+    <header class="encabezado">
+
+        <div class="encabezado-contenido">
+
+            <!-- LOGO -->
+            <a href="{% url 'inicio' %}" class="logo">
+
+                <span class="logo-simbolo">
+                    C
+                </span>
+
+                <span class="logo-texto">
+
+                    <strong>CHARCUTERÍA</strong>
+
+                    <small>MERCADOS Y CRÉDITOS</small>
+
+                </span>
+
+            </a>
+
+
+            <!-- INICIO DE SESIÓN -->
+            
+<div class="encabezado-info">
+
+    <span>Calidad para tu hogar</span>
+
+    {% if user.is_authenticated %}
+
+        <div class="sesion-controles">
+
+            <span class="usuario-activo">
+                Hola, {{ user.username }}
+            </span>
+
+            {% if es_administrador %}
+
+                <a href="{% url 'panel_usuario' %}"
+                   class="acceso acceso-panel">
+                    Panel administrativo
+                </a>
+
+            {% elif es_trabajador %}
+
+                <a href="{% url 'panel_usuario' %}"
+                   class="acceso acceso-panel">
+                    Gestionar tienda
+                </a>
+
+            {% else %}
+
+                <span class="rol-pendiente">
+                    Rol pendiente
+                </span>
+
+            {% endif %}
+
+            
+            <!-- CERRAR SESIÓN -->
+            <form id="formCerrarSesion"
+                action="{% url 'logout' %}"
+                method="POST">
+
+                {% csrf_token %}
+
+                <button type="submit" class="acceso">
+                    Cerrar sesión
+                </button>
+
+            </form>
+
+
+        </div>
+
+    {% else %}
+
+        <a href="{% url 'login' %}" class="acceso">
+            Ingreso administrativo
+        </a>
+
+    {% endif %}
+
+</div>
+
+
     </header>
 
+
+    <!-- =====================================
+         MENÚ DE NAVEGACIÓN
+    ====================================== -->
+
+    <nav class="navegacion">
+
+        <div class="nav-contenido">
+
+            <a href="{% url 'inicio' %}">
+                INICIO
+            </a>
+
+            <a href="{% url 'inicio' %}#categorias">
+                CATEGORÍAS
+            </a>
+
+            <a href="{% url 'inicio' %}#productos">
+                PRODUCTOS
+            </a>
+
+            <a href="{% url 'inicio' %}#creditos">
+                CRÉDITOS
+            </a>
+
+            <a href="{% url 'inicio' %}#contacto">
+                CONTACTO
+            </a>
+
+        </div>
+
+    </nav>
+
+
+    <!-- =====================================
+         CONTENIDO DE CADA PÁGINA
+    ====================================== -->
+
     <main>
+
         {% block content %}
         {% endblock %}
+
     </main>
 
-    <footer>
-        <p>Sistema de Gestión para Charcutería</p>
+
+    <!-- =====================================
+         PIE DE PÁGINA
+    ====================================== -->
+
+    <footer class="footer" id="contacto">
+
+        <div class="footer-contenido">
+
+            <!-- INFORMACIÓN -->
+            <div>
+
+                <h3>CHARCUTERÍA</h3>
+
+                <p>
+                    Calidad y confianza para nuestros
+                    clientes. Gestión de productos,
+                    mercados y créditos.
+                </p>
+
+            </div>
+
+
+            <!-- ENLACES -->
+            <div>
+
+                <h4>Enlaces rápidos</h4>
+
+                <a href="{% url 'inicio' %}">
+                    Inicio
+                </a>
+
+                <a href="{% url 'inicio' %}#categorias">
+                    Categorías
+                </a>
+
+                <a href="{% url 'inicio' %}#productos">
+                    Productos
+                </a>
+
+            </div>
+
+
+            <!-- SISTEMA -->
+            <div>
+
+                <h4>Nuestro sistema</h4>
+
+                <p>Gestión de clientes</p>
+
+                <p>Mercados y ventas</p>
+
+                <p>Créditos y cuentas pendientes</p>
+
+            </div>
+
+        </div>
+
+
+        <!-- DERECHOS -->
+        <div class="footer-inferior">
+
+            © {% now "Y" %} Charcutería.
+            Todos los derechos reservados.
+
+        </div>
+
     </footer>
+
+  
+<!-- =====================================
+     AVISO DE CIERRE DE SESIÓN
+===================================== -->
+
+{% if turno_en_sesion %}
+
+<dialog id="teModalLogout" class="te-modal">
+
+    <div class="te-modal-icono">🕒</div>
+
+    <h2>¡Tu turno sigue abierto!</h2>
+
+    <p>
+        Antes de cerrar sesión debes finalizar
+        tu jornada laboral.
+    </p>
+
+    <p>
+        Se guardarán tus ventas, abonos, hora de
+        salida y dinero recaudado. El administrador
+        recibirá el resumen para revisarlo.
+    </p>
+
+    <div class="te-modal-acciones">
+
+        <button type="button"
+                class="te-boton-cancelar"
+                onclick="document.getElementById('teModalLogout').close()">
+
+            Seguir trabajando
+
+        </button>
+
+        <form method="POST"
+              action="{% url 'finalizar_turno' %}">
+
+            {% csrf_token %}
+
+            <input type="hidden"
+                   name="cerrar_despues"
+                   value="si">
+
+            <button type="submit" class="te-boton">
+                Finalizar turno y salir
+            </button>
+
+        </form>
+
+    </div>
+
+</dialog>
+
+{% endif %}
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const formulario = document.getElementById('formCerrarSesion');
+    const ventana = document.getElementById('teModalLogout');
+
+    if (formulario && ventana) {
+
+        formulario.addEventListener('submit', function (evento) {
+
+            evento.preventDefault();
+            ventana.showModal();
+
+        });
+
+    }
+
+});
+</script>
+
+{% block extra_js %}{% endblock %}
 
 </body>
 </html>
+

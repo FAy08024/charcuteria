@@ -1,0 +1,352 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cuentas de Clientes | Charcutería{% endblock %}
+
+{% block content %}
+
+<section class="cp-pagina">
+    <div class="cp-contenedor">
+
+        <!-- ENCABEZADO -->
+        <div class="cp-banner">
+            <div>
+                <span>✦ CHARCUTERÍA · CRÉDITOS ✦</span>
+
+                <h1>Cuentas de clientes</h1>
+
+                <p>
+                    Consulta las deudas acumuladas,
+                    créditos y abonos de nuestros clientes.
+                </p>
+            </div>
+
+            <div class="cp-copo" aria-hidden="true">
+                ❄
+            </div>
+        </div>
+
+        <!-- NAVEGACIÓN -->
+        <div class="cp-navegacion">
+
+            <a href="{% url 'panel_usuario' %}">
+                ← Volver al panel
+            </a>
+
+            <span>CUENTAS DEMO Y MOVIMIENTOS REGISTRADOS</span>
+
+        </div>
+
+        <!-- TÍTULO -->
+        <div class="cp-seccion-titulo">
+
+            <div>
+                <h2>Estado de cuenta por cliente</h2>
+
+                <p>
+                    Selecciona un cliente para consultar
+                    todos sus créditos y pagos registrados.
+                </p>
+            </div>
+
+            <strong>
+                {{ cuentas|length }} clientes
+            </strong>
+
+        </div>
+
+        <!-- BUSCADOR -->
+        <div class="cp-busqueda">
+
+            <input
+                type="search"
+                id="buscarCuenta"
+                placeholder="Buscar cliente o código..."
+                aria-label="Buscar cuentas de clientes"
+                autocomplete="off"
+            >
+
+        </div>
+
+        <!-- LISTA DE CLIENTES -->
+        <div class="cp-grid">
+
+            {% for cuenta in cuentas %}
+
+                <a
+                    href="{% url 'detalle_cuenta_demo' cuenta.cliente_id %}"
+                    class="cp-tarjeta"
+                    data-busqueda="{{ cuenta.cliente.nombre|lower }} {{ cuenta.numero|lower }} {{ cuenta.cliente.codigo|lower }}"
+                >
+
+                    <!-- INFORMACIÓN DEL CLIENTE -->
+                    <div class="cp-tarjeta-cabecera">
+
+                        <div class="cp-avatar">
+
+                            {% if cuenta.cliente.foto %}
+
+                                <img
+                                    src="{% static cuenta.cliente.foto %}"
+                                    alt="Foto de {{ cuenta.cliente.nombre }}"
+                                    loading="lazy"
+                                >
+
+                            {% else %}
+
+                                {{ cuenta.cliente.iniciales }}
+
+                            {% endif %}
+
+                        </div>
+
+                        <div>
+
+                            <h3>{{ cuenta.cliente.nombre }}</h3>
+
+                            <p>{{ cuenta.cliente.codigo }}</p>
+
+                            <span class="cp-etiqueta">
+                                {{ cuenta.cliente.tipo }}
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="cp-separador"></div>
+
+                    <!-- DEUDA ACUMULADA -->
+                    <div class="cp-saldo">
+
+                        <span>Deuda total pendiente</span>
+
+                        <strong>
+                            {{ cuenta.saldo_formato }}
+                        </strong>
+
+                    </div>
+
+                    <!-- RESUMEN DE CRÉDITOS -->
+                    <div class="cp-tarjeta-datos">
+
+                        <div>
+
+                            <span>Créditos registrados</span>
+
+                            <strong>
+                                {{ cuenta.cantidad_creditos }}
+                            </strong>
+
+                        </div>
+
+                        <div>
+
+                            <span>Abonos acumulados</span>
+
+                            <strong>
+                                {{ cuenta.abonos_formato }}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                    <!-- ESTADO DEL CLIENTE -->
+                    <div class="cp-progreso-titulo">
+
+                        <span>Estado de sus créditos</span>
+
+                        <strong>
+
+                            {% if cuenta.cantidad_creditos == 0 %}
+
+                                Sin créditos
+
+                            {% elif cuenta.creditos_pendientes == 0 %}
+
+                                Todos pagados
+
+                            {% else %}
+
+                                {{ cuenta.creditos_pendientes }}
+                                pendiente{{ cuenta.creditos_pendientes|pluralize }}
+
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+                    <!-- PROGRESO DEL CRÉDITO -->
+                    {% if cuenta.cantidad_creditos == 1 %}
+
+                        {% if cuenta.plazo_meses > 0 %}
+
+                            <div class="cp-progreso-titulo cp-plazo-individual">
+
+                                <span>Tiempo del crédito</span>
+
+                                <strong>
+                                    {{ cuenta.meses_transcurridos }}
+                                    de {{ cuenta.plazo_meses }} meses
+                                </strong>
+
+                            </div>
+
+                            <div class="cp-barra">
+
+                                <div
+                                    class="cp-barra-progreso"
+                                    data-porcentaje="{{ cuenta.porcentaje }}"
+                                    role="progressbar"
+                                    aria-label="Tiempo transcurrido del crédito"
+                                    aria-valuemin="0"
+                                    aria-valuemax="100"
+                                    aria-valuenow="{{ cuenta.porcentaje }}"
+                                ></div>
+
+                            </div>
+
+                        {% else %}
+
+                            <p class="cp-sin-plazo">
+                                🕒 Crédito sin plazo definido
+                            </p>
+
+                        {% endif %}
+
+                    {% elif cuenta.cantidad_creditos > 1 %}
+
+                        <p class="cp-sin-plazo">
+                            📋 Cada crédito tiene su propio
+                            saldo y sus condiciones.
+                        </p>
+
+                    {% else %}
+
+                        <p class="cp-sin-plazo">
+                            ✅ No tiene deudas registradas.
+                        </p>
+
+                    {% endif %}
+
+                    <!-- PIE DE TARJETA -->
+                    <div class="cp-tarjeta-pie">
+
+                        <span>
+
+                            {% if cuenta.cantidad_creditos == 0 %}
+
+                                Sin créditos
+
+                            {% elif cuenta.cantidad_creditos == 1 %}
+
+                                {{ cuenta.numero }}
+
+                            {% else %}
+
+                                {{ cuenta.cantidad_creditos }}
+                                créditos registrados
+
+                            {% endif %}
+
+                        </span>
+
+                        <strong>
+                            Ver cuenta →
+                        </strong>
+
+                    </div>
+
+                </a>
+
+            {% empty %}
+
+                <p class="cp-vacio">
+                    No hay clientes disponibles.
+                </p>
+
+            {% endfor %}
+
+        </div>
+
+        <!-- AVISO -->
+        <p class="cp-nota">
+
+            Las cuentas CRE de demostración mantienen
+            sus valores simulados. Las nuevas ventas
+            a crédito y los abonos registrados se
+            consultan desde SQLite.
+
+        </p>
+
+        <!-- SIN RESULTADOS DE BÚSQUEDA -->
+        <p
+            class="cp-vacio"
+            id="cpSinResultados"
+            hidden
+        >
+            No se encontraron clientes con esa búsqueda.
+        </p>
+
+    </div>
+</section>
+
+
+<!-- JAVASCRIPT -->
+<script>
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    // BARRAS DE PROGRESO
+    const barras = document.querySelectorAll('.cp-barra-progreso');
+
+    barras.forEach(function (barra) {
+
+        const porcentaje = Number(barra.dataset.porcentaje);
+
+        const valor = Number.isFinite(porcentaje)
+            ? Math.max(0, Math.min(100, porcentaje))
+            : 0;
+
+        barra.style.width = valor + '%';
+
+    });
+
+
+    // BUSCADOR DE CLIENTES
+    const buscador = document.getElementById('buscarCuenta');
+
+    const tarjetas = document.querySelectorAll('.cp-tarjeta');
+
+    const mensaje = document.getElementById('cpSinResultados');
+
+
+    buscador.addEventListener('input', function () {
+
+        const texto = buscador.value.toLowerCase().trim();
+
+        let cantidad = 0;
+
+        tarjetas.forEach(function (tarjeta) {
+
+            const coincide = tarjeta.dataset.busqueda.includes(texto);
+
+            tarjeta.hidden = !coincide;
+
+            if (coincide) {
+                cantidad++;
+            }
+
+        });
+
+        mensaje.hidden = cantidad > 0;
+
+    });
+
+});
+</script>
+
+{% endblock %}

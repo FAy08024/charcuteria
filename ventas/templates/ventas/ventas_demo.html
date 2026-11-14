@@ -1,0 +1,640 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ventas | Charcutería{% endblock %}
+
+{% block content %}
+
+<section class="vta-pagina"
+         id="vtaPagina"
+         data-hoy="{{ fecha_hoy|date:'Y-m-d' }}">
+
+    <div class="vta-contenedor">
+
+        <!-- ENCABEZADO -->
+        <header class="vta-banner">
+            <div>
+                <span class="vta-etiqueta">
+                    ✦ CHARCUTERÍA · ADMINISTRACIÓN ✦
+                </span>
+
+                <h1>Gestión de Ventas</h1>
+
+                <p>
+                    Consulta y supervisa las operaciones
+                    realizadas en nuestra charcutería.
+                </p>
+            </div>
+
+            <span class="vta-copo" aria-hidden="true">❄</span>
+        </header>
+
+        <!-- NAVEGACIÓN -->
+        <div class="vta-navegacion">
+            <a href="{% url 'panel_usuario' %}">
+                ← Volver al panel
+            </a>
+            <span>DATOS DE DEMOSTRACIÓN</span>
+        </div>
+
+        <!-- RESUMEN -->
+        <div class="vta-resumen">
+
+            <div class="vta-resumen-card">
+                <div class="vta-resumen-icono">🛒</div>
+                <div>
+                    <span>Ventas encontradas</span>
+                    <strong id="vtaTotalVentas">0</strong>
+                </div>
+            </div>
+
+            <div class="vta-resumen-card">
+                <div class="vta-resumen-icono">💰</div>
+                <div>
+                    <span>Valor registrado</span>
+                    <strong id="vtaTotalDinero">$0</strong>
+                </div>
+            </div>
+
+            <div class="vta-resumen-card">
+                <div class="vta-resumen-icono">💳</div>
+                <div>
+                    <span>Compras a crédito</span>
+                    <strong id="vtaTotalCredito">0</strong>
+                </div>
+            </div>
+
+            <div class="vta-resumen-card">
+                <div class="vta-resumen-icono">✨</div>
+                <div>
+                    <span>Compras de contado</span>
+                    <strong id="vtaTotalContado">0</strong>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- LISTADO DE VENTAS -->
+        <div class="vta-panel">
+
+            <div class="vta-titulo">
+                <div>
+                    <span>✦ REGISTRO DE OPERACIONES</span>
+                    <h2>Historial de ventas</h2>
+                    <p>
+                        Busca, ordena y consulta los detalles
+                        de cada compra registrada.
+                    </p>
+                </div>
+
+                <div class="vta-fecha">
+                    <span>Fecha de consulta</span>
+                    <strong>
+                        {{ fecha_hoy|date:"d/m/Y" }}
+                    </strong>
+                </div>
+            </div>
+
+            <!-- FILTROS POR FECHA -->
+            <div class="vta-periodos" aria-label="Periodo de ventas">
+
+                <button type="button"
+                        class="vta-periodo"
+                        data-periodo="1"
+                        aria-pressed="false">
+                    Hoy
+                </button>
+
+                <button type="button"
+                        class="vta-periodo activo"
+                        data-periodo="7"
+                        aria-pressed="true">
+                    7 días
+                </button>
+
+                <button type="button"
+                        class="vta-periodo"
+                        data-periodo="30"
+                        aria-pressed="false">
+                    30 días
+                </button>
+
+                <button type="button"
+                        class="vta-periodo"
+                        data-periodo="365"
+                        aria-pressed="false">
+                    1 año
+                </button>
+
+                <button type="button"
+                        class="vta-periodo"
+                        data-periodo="todas"
+                        aria-pressed="false">
+                    Todas
+                </button>
+
+            </div>
+
+            <!-- BUSCADOR Y ORDENAMIENTO -->
+            <div class="vta-herramientas">
+
+                <div class="vta-buscador">
+                    <label for="vtaBuscar">Buscar venta</label>
+
+                    <input
+                        type="search"
+                        id="vtaBuscar"
+                        placeholder="Número, cliente o método de pago..."
+                        autocomplete="off">
+                </div>
+
+                <div class="vta-orden">
+                    <label for="vtaOrden">Ordenar por</label>
+
+                    <select id="vtaOrden">
+                        <option value="reciente">Más recientes</option>
+                        <option value="antigua">Más antiguas</option>
+                        <option value="mayor">Compra más cara</option>
+                        <option value="menor">Compra más económica</option>
+                    </select>
+                </div>
+
+                <div class="vta-tipo-filtro">
+                    <label for="vtaTipo">Tipo de compra</label>
+
+                    <select id="vtaTipo">
+                        <option value="todos">Todas</option>
+                        <option value="contado">Contado</option>
+                        <option value="crédito">Crédito</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- ENCABEZADOS DE COLUMNAS -->
+            <div class="vta-columnas">
+                <span>VENTA</span>
+                <span>CLIENTE</span>
+                <span>FECHA</span>
+                <span>TIPO</span>
+                <span>ESTADO</span>
+                <span>TOTAL</span>
+                <span></span>
+            </div>
+
+            <!-- FILAS HORIZONTALES -->
+            <div class="vta-lista" id="vtaLista">
+
+                {% for venta in ventas %}
+
+                <button
+                    type="button"
+                    class="vta-fila"
+                    data-numero="{{ venta.numero }}"
+                    data-fecha="{{ venta.fecha_iso }}"
+                    data-orden="{{ venta.fecha_iso }}T{{ venta.hora }}"
+                    data-total="{{ venta.total }}"
+                    data-tipo="{{ venta.tipo|lower }}"
+                    data-busqueda="{{ venta.numero|lower }} {{ venta.cliente|lower }} {{ venta.codigo|lower }} {{ venta.tipo|lower }} {{ venta.pago|lower }}"
+                >
+
+                    <!-- NÚMERO -->
+                    <div class="vta-numero">
+                        <span class="vta-numero-icono">🛍️</span>
+                        <strong>{{ venta.numero }}</strong>
+                    </div>
+
+                    <!-- CLIENTE -->
+                    <div class="vta-cliente">
+
+                        <div class="vta-avatar">
+                            {% if venta.codigo == 'Sin registro' %}
+                                👤
+                            {% else %}
+                                {{ venta.cliente|slice:":1"|upper }}
+                            {% endif %}
+                        </div>
+
+                        <div class="vta-cliente-texto">
+                            <strong>{{ venta.cliente }}</strong>
+                            <small>{{ venta.codigo }}</small>
+                        </div>
+
+                    </div>
+
+                    <!-- FECHA -->
+                    <div class="vta-fecha-fila">
+                        <strong>{{ venta.fecha_texto }}</strong>
+                        <small>{{ venta.hora }}</small>
+                    </div>
+
+                    <!-- TIPO -->
+                    <div>
+                        <span class="vta-tipo
+                            {% if venta.tipo == 'Crédito' %}
+                                vta-tipo-credito
+                            {% else %}
+                                vta-tipo-contado
+                            {% endif %}
+                        ">
+                            {{ venta.tipo }}
+                        </span>
+                    </div>
+
+                    <!-- ESTADO -->
+                    <div>
+                        <span class="vta-estado
+                            {% if venta.estado == 'Pagada' %}
+                                vta-estado-pagada
+                            {% else %}
+                                vta-estado-pendiente
+                            {% endif %}
+                        ">
+                            {{ venta.estado }}
+                        </span>
+                    </div>
+
+                    <!-- TOTAL -->
+                    <div class="vta-total">
+                        {{ venta.total_formato }}
+                    </div>
+
+                    <!-- FLECHA -->
+                    <span class="vta-flecha" aria-hidden="true">›</span>
+
+                </button>
+
+                {% endfor %}
+
+            </div>
+
+            <!-- SIN RESULTADOS -->
+            <div class="vta-vacio" id="vtaVacio" hidden>
+                <span aria-hidden="true">❄</span>
+                <h3>No se encontraron ventas</h3>
+                <p>Prueba otra fecha o cambia los filtros.</p>
+            </div>
+
+            <div class="vta-pie">
+                <span>✦ CHARCUTERÍA · VENTAS ✦</span>
+                <span>Información de demostración</span>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- VENTANA EMERGENTE -->
+<dialog class="vta-modal"
+        id="vtaModal"
+        aria-labelledby="vtaModalTitulo">
+
+    <div class="vta-modal-header">
+
+        <div>
+            <span>✦ DETALLE DE OPERACIÓN ✦</span>
+            <h2 id="vtaModalTitulo">Detalle de venta</h2>
+        </div>
+
+        <button type="button"
+                class="vta-cerrar"
+                id="vtaCerrar"
+                aria-label="Cerrar detalle">
+            ×
+        </button>
+
+    </div>
+
+    <div class="vta-modal-contenido">
+
+        <div class="vta-modal-cliente">
+            <div class="vta-modal-icono">🛍️</div>
+            <div>
+                <small>COMPRA REGISTRADA</small>
+                <h3 id="vtaModalCliente"></h3>
+                <p id="vtaModalCodigo"></p>
+            </div>
+        </div>
+
+        <!-- INFORMACIÓN GENERAL -->
+        <div class="vta-modal-grid">
+
+            <div>
+                <span>Fecha y hora</span>
+                <strong id="vtaModalFecha"></strong>
+            </div>
+
+            <div>
+                <span>Tipo de compra</span>
+                <strong id="vtaModalTipo"></strong>
+            </div>
+
+            <div>
+                <span>Método de pago</span>
+                <strong id="vtaModalPago"></strong>
+            </div>
+
+            <div>
+                <span>Estado</span>
+                <strong id="vtaModalEstado"></strong>
+            </div>
+
+        </div>
+
+        <!-- PRODUCTOS COMPRADOS -->
+        <div class="vta-modal-productos">
+
+            <h3>Productos de la compra</h3>
+
+            <div class="vta-productos-cabecera">
+                <span>PRODUCTO</span>
+                <span>CANT.</span>
+                <span>IMPORTE</span>
+            </div>
+
+            <div id="vtaModalProductos"></div>
+
+        </div>
+
+        <!-- TOTAL -->
+        <div class="vta-modal-total">
+            <span>TOTAL DE LA VENTA</span>
+            <strong id="vtaModalTotal"></strong>
+        </div>
+
+        <p class="vta-modal-nota">
+            Esta operación es ficticia y no representa una venta real.
+        </p>
+
+    </div>
+
+</dialog>
+
+
+<!-- DATOS PARA JAVASCRIPT -->
+{{ ventas|json_script:"vtaDatos" }}
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const ventas = JSON.parse(
+        document.getElementById('vtaDatos').textContent
+    );
+
+    const filas = Array.from(
+        document.querySelectorAll('.vta-fila')
+    );
+
+    const lista = document.getElementById('vtaLista');
+    const buscar = document.getElementById('vtaBuscar');
+    const orden = document.getElementById('vtaOrden');
+    const tipo = document.getElementById('vtaTipo');
+    const periodos = document.querySelectorAll('.vta-periodo');
+    const vacio = document.getElementById('vtaVacio');
+
+    const modal = document.getElementById('vtaModal');
+    const cerrar = document.getElementById('vtaCerrar');
+
+    const fechaActual = document.getElementById('vtaPagina')
+        .dataset.hoy;
+
+    const hoy = new Date(fechaActual + 'T00:00:00Z');
+    const milisegundosDia = 86400000;
+
+    let periodoActual = '7';
+
+
+    // FORMATEAR PESOS COLOMBIANOS
+    function pesos(valor) {
+        return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            maximumFractionDigits: 0
+        }).format(valor);
+    }
+
+
+    // FILTRAR POR FECHA
+    function coincidePeriodo(fecha) {
+
+        if (periodoActual === 'todas') return true;
+
+        const fechaVenta = new Date(fecha + 'T00:00:00Z');
+
+        const diferencia = Math.round(
+            (hoy - fechaVenta) / milisegundosDia
+        );
+
+        const dias = Number(periodoActual);
+
+        return diferencia >= 0 && diferencia < dias;
+    }
+
+
+    // ORDENAR Y FILTRAR
+    function actualizarVentas() {
+
+        const texto = buscar.value.toLowerCase().trim();
+        const tipoActual = tipo.value;
+        const criterio = orden.value;
+
+        filas.sort(function (a, b) {
+
+            if (criterio === 'mayor') {
+                return Number(b.dataset.total) -
+                       Number(a.dataset.total);
+            }
+
+            if (criterio === 'menor') {
+                return Number(a.dataset.total) -
+                       Number(b.dataset.total);
+            }
+
+            if (criterio === 'antigua') {
+                return a.dataset.orden.localeCompare(b.dataset.orden);
+            }
+
+            return b.dataset.orden.localeCompare(a.dataset.orden);
+        });
+
+        filas.forEach(function (fila) {
+            lista.appendChild(fila);
+        });
+
+        let cantidad = 0;
+        let totalDinero = 0;
+        let creditos = 0;
+        let contados = 0;
+
+        filas.forEach(function (fila) {
+
+            const coincideTexto =
+                fila.dataset.busqueda.includes(texto);
+
+            const coincideTipo =
+                tipoActual === 'todos' ||
+                fila.dataset.tipo === tipoActual;
+
+            const coincideFecha =
+                coincidePeriodo(fila.dataset.fecha);
+
+            const mostrar =
+                coincideTexto && coincideTipo && coincideFecha;
+
+            fila.hidden = !mostrar;
+
+            if (mostrar) {
+
+                cantidad++;
+                totalDinero += Number(fila.dataset.total);
+
+                if (fila.dataset.tipo === 'crédito') {
+                    creditos++;
+                } else {
+                    contados++;
+                }
+            }
+        });
+
+        document.getElementById('vtaTotalVentas').textContent =
+            cantidad;
+
+        document.getElementById('vtaTotalDinero').textContent =
+            pesos(totalDinero);
+
+        document.getElementById('vtaTotalCredito').textContent =
+            creditos;
+
+        document.getElementById('vtaTotalContado').textContent =
+            contados;
+
+        vacio.hidden = cantidad > 0;
+    }
+
+
+    // BOTONES: HOY, 7 DÍAS, 30 DÍAS, 1 AÑO
+    periodos.forEach(function (boton) {
+
+        boton.addEventListener('click', function () {
+
+            periodoActual = boton.dataset.periodo;
+
+            periodos.forEach(function (otro) {
+                otro.classList.remove('activo');
+                otro.setAttribute('aria-pressed', 'false');
+            });
+
+            boton.classList.add('activo');
+            boton.setAttribute('aria-pressed', 'true');
+
+            actualizarVentas();
+        });
+    });
+
+
+    // ABRIR DETALLE DE VENTA
+    function abrirDetalle(numero) {
+
+        const venta = ventas.find(function (v) {
+            return v.numero === numero;
+        });
+
+        if (!venta) return;
+
+        document.getElementById('vtaModalTitulo').textContent =
+            'Venta ' + venta.numero;
+
+        document.getElementById('vtaModalCliente').textContent =
+            venta.cliente;
+
+        document.getElementById('vtaModalCodigo').textContent =
+            venta.codigo;
+
+        document.getElementById('vtaModalFecha').textContent =
+            venta.fecha_texto + ' · ' + venta.hora;
+
+        document.getElementById('vtaModalTipo').textContent =
+            venta.tipo;
+
+        document.getElementById('vtaModalPago').textContent =
+            venta.pago;
+
+        document.getElementById('vtaModalEstado').textContent =
+            venta.estado;
+
+        document.getElementById('vtaModalTotal').textContent =
+            venta.total_formato;
+
+        const contenedor = document.getElementById(
+            'vtaModalProductos'
+        );
+
+        contenedor.replaceChildren();
+
+        venta.productos.forEach(function (producto) {
+
+            const fila = document.createElement('div');
+            fila.className = 'vta-modal-producto';
+
+            const nombre = document.createElement('strong');
+            nombre.textContent = producto.nombre;
+
+            const cantidad = document.createElement('span');
+            cantidad.textContent = 'x' + producto.cantidad;
+
+            const importe = document.createElement('strong');
+            importe.textContent = producto.importe_formato;
+
+            fila.append(nombre, cantidad, importe);
+
+            contenedor.appendChild(fila);
+        });
+
+        modal.showModal();
+    }
+
+
+    filas.forEach(function (fila) {
+
+        fila.addEventListener('click', function () {
+            abrirDetalle(fila.dataset.numero);
+        });
+    });
+
+
+    // CERRAR VENTANA
+    cerrar.addEventListener('click', function () {
+        modal.close();
+    });
+
+    modal.addEventListener('click', function (evento) {
+
+        if (evento.target !== modal) return;
+
+        const rect = modal.getBoundingClientRect();
+
+        const fuera =
+            evento.clientX < rect.left ||
+            evento.clientX > rect.right ||
+            evento.clientY < rect.top ||
+            evento.clientY > rect.bottom;
+
+        if (fuera) modal.close();
+    });
+
+
+    buscar.addEventListener('input', actualizarVentas);
+    orden.addEventListener('change', actualizarVentas);
+    tipo.addEventListener('change', actualizarVentas);
+
+    actualizarVentas();
+
+});
+</script>
+
+{% endblock %}

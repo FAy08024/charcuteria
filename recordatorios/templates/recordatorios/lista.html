@@ -1,0 +1,354 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Recordatorios | Charcutería{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet"
+      href="{% static 'css/estilos.css' %}?v=12">
+
+<main class="rc-pagina">
+
+    <div class="rc-contenedor">
+
+        <!-- ENCABEZADO NAVIDEÑO -->
+        <header class="rc-banner">
+
+            <div>
+                <span>
+                    ✦ CHARCUTERÍA · CONTROL DE COBROS ✦
+                </span>
+
+                <h1>Centro de recordatorios</h1>
+
+                <p>
+                    Consulta vencimientos, saldos pendientes
+                    y cuentas que necesitan seguimiento.
+                </p>
+            </div>
+
+            <div class="rc-banner-icono">🔔</div>
+
+        </header>
+
+        <!-- NAVEGACIÓN -->
+        <nav class="rc-navegacion">
+
+            <a href="{% url 'panel_usuario' %}">
+                ← Volver al panel
+            </a>
+
+            <span>SEGUIMIENTO DE CUENTAS</span>
+
+        </nav>
+
+        <!-- RESUMEN -->
+        <section class="rc-estadisticas">
+
+            <article class="rc-estadistica">
+                <div class="rc-estadistica-icono">📋</div>
+                <span>Cuentas pendientes</span>
+                <strong>{{ total_pendientes }}</strong>
+                <small>{{ saldo_total }} por cobrar</small>
+            </article>
+
+            <article class="rc-estadistica">
+                <div class="rc-estadistica-icono">🚨</div>
+                <span>Cuentas vencidas</span>
+                <strong>{{ total_vencidas }}</strong>
+                <small>Requieren atención</small>
+            </article>
+
+            <article class="rc-estadistica">
+                <div class="rc-estadistica-icono">⏰</div>
+                <span>Próximas a vencer</span>
+                <strong>{{ total_proximas }}</strong>
+                <small>Dentro de {{ dias_proximos }} días</small>
+            </article>
+
+            <article class="rc-estadistica">
+                <div class="rc-estadistica-icono">📅</div>
+                <span>Sin fecha definida</span>
+                <strong>{{ total_sin_fecha }}</strong>
+                <small>Necesitan seguimiento</small>
+            </article>
+
+        </section>
+
+        <!-- PANEL PRINCIPAL -->
+        <section class="rc-panel">
+
+            <div class="rc-titulo">
+
+                <div>
+                    <small>✦ ALERTAS Y VENCIMIENTOS ✦</small>
+                    <h2>Cuentas por revisar</h2>
+                    <p>
+                        Los saldos se actualizan con los abonos
+                        registrados en el sistema.
+                    </p>
+                </div>
+
+                <div class="rc-contador">
+                    {{ recordatorios|length }} resultados
+                </div>
+
+            </div>
+
+            <!-- FILTROS -->
+            <form method="get"
+                  action="{% url 'lista_recordatorios' %}"
+                  class="rc-filtros">
+
+                <div class="rc-campo">
+                    <label for="rcEstado">Mostrar cuentas</label>
+
+                    <select name="estado"
+                            id="rcEstado"
+                            class="rc-input">
+
+                        <option value="todas"
+                            {% if estado == 'todas' %}selected{% endif %}>
+                            Todas las pendientes
+                        </option>
+
+                        <option value="vencida"
+                            {% if estado == 'vencida' %}selected{% endif %}>
+                            Vencidas
+                        </option>
+
+                        <option value="proxima"
+                            {% if estado == 'proxima' %}selected{% endif %}>
+                            Próximas a vencer
+                        </option>
+
+                        <option value="sin_fecha"
+                            {% if estado == 'sin_fecha' %}selected{% endif %}>
+                            Sin fecha definida
+                        </option>
+
+                        <option value="seguimiento"
+                            {% if estado == 'seguimiento' %}selected{% endif %}>
+                            En seguimiento
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="rc-campo rc-campo-busqueda">
+
+                    <label for="rcBuscar">Buscar cliente o cuenta</label>
+
+                    <input type="search"
+                           name="q"
+                           id="rcBuscar"
+                           class="rc-input"
+                           value="{{ busqueda }}"
+                           placeholder="Nombre, CLI-001, CRE-001...">
+
+                </div>
+
+                <button type="submit" class="rc-filtrar">
+                    Buscar
+                </button>
+
+                <a href="{% url 'lista_recordatorios' %}"
+                   class="rc-limpiar">
+                    Limpiar
+                </a>
+
+            </form>
+
+            <!-- LISTA DE RECORDATORIOS -->
+            <div class="rc-lista">
+
+                {% for r in recordatorios %}
+
+                    <article class="rc-tarjeta rc-{{ r.estado }}">
+
+                        <div class="rc-tarjeta-superior">
+
+                            <div class="rc-cliente">
+
+                                <div class="rc-cliente-icono">
+                                    {{ r.icono }}
+                                </div>
+
+                                <div>
+                                    <h3>{{ r.cliente_nombre }}</h3>
+
+                                    <p>
+                                        {{ r.cliente_codigo }}
+                                        · {{ r.numero }}
+                                    </p>
+                                </div>
+
+                            </div>
+
+                            <span class="rc-estado rc-estado-{{ r.estado }}">
+                                {{ r.estado_texto }}
+                            </span>
+
+                        </div>
+
+                        <div class="rc-tarjeta-datos">
+
+                            <div>
+                                <small>Saldo pendiente</small>
+
+                                <strong class="rc-monto">
+                                    {{ r.saldo_formato }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <small>Vencimiento</small>
+
+                                <strong>
+                                    {{ r.fecha_vencimiento }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <small>Situación</small>
+
+                                <strong>
+                                    {{ r.descripcion }}
+                                </strong>
+                            </div>
+
+                        </div>
+
+                        <!-- PROGRESO DE PAGO -->
+                        <div class="rc-progreso">
+
+                            <div class="rc-progreso-titulo">
+                                <span>Progreso de pago</span>
+                                <strong>{{ r.porcentaje_pagado }}%</strong>
+                            </div>
+
+                            
+                            <div class="rc-progreso-fondo">
+                                <div class="rc-progreso-relleno"
+                                    data-porcentaje="{{ r.porcentaje_pagado }}">
+                                </div>
+                            </div>
+
+
+                            <div class="rc-progreso-informacion">
+                                <span>
+                                    Abonado: {{ r.abonos_formato }}
+                                </span>
+
+                                <span>
+                                    Total: {{ r.total_formato }}
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <!-- ACCIONES -->
+                        <div class="rc-acciones">
+
+                            <button type="button"
+                                    class="rc-copiar"
+                                    data-mensaje="{{ r.mensaje }}">
+                                📋 Copiar recordatorio
+                            </button>
+
+                            <a href="{% url 'registrar_abono' %}"
+                               class="rc-abonar">
+                                💳 Registrar abono
+                            </a>
+
+                        </div>
+
+                    </article>
+
+                {% empty %}
+
+                    <div class="rc-vacio">
+
+                        <div>🎉</div>
+
+                        <h3>No hay recordatorios para mostrar</h3>
+
+                        <p>
+                            No encontramos cuentas pendientes
+                            que coincidan con los filtros.
+                        </p>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+        <!-- AVISO -->
+        <div class="rc-nota-final">
+            <span>💡</span>
+            Los recordatorios se consultan desde las cuentas
+            pendientes. Copiar un aviso no envía mensajes
+            automáticamente al cliente.
+        </div>
+
+    </div>
+
+</main>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ACTUALIZAR LAS BARRAS DE PROGRESO
+    document.querySelectorAll('.rc-progreso-relleno')
+        .forEach(function (barra) {
+
+            const porcentaje = Number(barra.dataset.porcentaje);
+
+            barra.style.width =
+                Math.max(0, Math.min(100, porcentaje || 0)) + '%';
+
+        });
+
+    const botones = document.querySelectorAll('.rc-copiar');
+
+    botones.forEach(function (boton) {
+
+        boton.addEventListener('click', async function () {
+
+            const mensaje = boton.dataset.mensaje;
+
+            try {
+
+                await navigator.clipboard.writeText(mensaje);
+
+                const textoAnterior = boton.textContent;
+
+                boton.textContent = '✓ Recordatorio copiado';
+
+                setTimeout(function () {
+                    boton.textContent = textoAnterior;
+                }, 1800);
+
+            } catch (error) {
+
+                alert(
+                    'No se pudo copiar automáticamente. ' +
+                    'Verifica los permisos del navegador.'
+                );
+
+            }
+
+        });
+
+    });
+
+});
+</script>
+
+{% endblock %}
