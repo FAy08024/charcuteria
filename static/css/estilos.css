@@ -10935,3 +10935,63 @@ dialog.te-modal[open] {
 .cp-vacio[hidden] {
     display: none !important;
 }
+
+/* =====================================
+   CARLOTA - CREAR PRODUCTO
+===================================== */
+
+/* Botones uno al lado del otro */
+.gp-acciones {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* Botón nuevo */
+.gp-boton-producto {
+    background: #194b3c;
+}
+
+.gp-boton-producto:hover {
+    background: #b99a36;
+}
+
+/* Campos del formulario */
+.gp-modal-producto .gp-combo-cuerpo textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 13px;
+    border: 1px solid #dce5dc;
+    border-radius: 8px;
+    background: #fafbf9;
+    color: #194b3c;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+}
+
+.gp-modal-producto .gp-combo-cuerpo textarea:focus {
+    outline: none;
+    border-color: #b99a36;
+}
+
+.gp-modal-producto .gp-combo-cuerpo input[type="checkbox"] {
+    width: auto;
+    accent-color: #194b3c;
+}
+
+/* Tarjetas de productos guardados */
+.gp-tarjeta-real {
+    cursor: default;
+}
+
+@media (max-width: 600px) {
+    .gp-acciones {
+        width: 100%;
+    }
+
+    .gp-acciones .gp-boton-combo {
+        flex: 1;
+    }
+}

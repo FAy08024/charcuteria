@@ -1,4 +1,4 @@
-
+from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -111,3 +111,36 @@ class IncidenciaInventario(models.Model):
 
     def __str__(self):
         return f'{self.producto_codigo} - {self.get_estado_display()}'
+
+class EntradaMercancia(models.Model):
+    producto = models.ForeignKey(
+        'productos.Producto',
+        on_delete=models.PROTECT,
+        related_name='entradas'
+    )
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='entradas_mercancia'
+    )
+
+    fecha = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    cantidad = models.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        validators=[
+            MinValueValidator(Decimal('0.001'))
+        ]
+    )
+
+    class Meta:
+        ordering = ['-fecha']
+        verbose_name = 'Entrada de mercancía'
+        verbose_name_plural = 'Entradas de mercancía'
+
+    def __str__(self):
+        return f'{self.producto.nombre} - {self.cantidad}'

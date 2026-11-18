@@ -56,10 +56,25 @@
                 </p>
             </div>
 
-            <button type="button" id="gpAbrirCombo"
-                    class="gp-boton-combo">
-                + Crear combo especial
-            </button>
+           
+<div class="gp-acciones">
+
+    <button
+        type="button"
+        id="gpAbrirProducto"
+        class="gp-boton-combo gp-boton-producto">
+        + Crear producto
+    </button>
+
+    <button
+        type="button"
+        id="gpAbrirCombo"
+        class="gp-boton-combo">
+        + Crear combo especial
+    </button>
+
+</div>
+
         </div>
 
         <div class="gp-filtros">
@@ -88,8 +103,9 @@
         </p>
 
         <div class="gp-aviso">
-            ❄ Esta es una demostración. Los cambios de precios,
-            descripciones y combos no se guardan en SQLite.
+            Los productos nuevos se guardan en SQLite.
+            Los productos de ejemplo, su edición y los
+            combos especiales continúan en modo demostración.
         </div>
 
     </div>
@@ -111,7 +127,8 @@
                 aria-label="Cerrar ventana">×</button>
     </div>
 
-    <form id="gpFormularioEditar">
+    <form id="gpFormularioEditar" method="post">
+    {% csrf_token %}
 
         <div class="gp-modal-cuerpo">
 
@@ -188,7 +205,15 @@
                 aria-label="Cerrar ventana">×</button>
     </div>
 
-    <form id="gpFormularioCombo" class="gp-combo-cuerpo">
+    
+    <form
+        id="gpFormularioCombo"
+        class="gp-combo-cuerpo"
+        method="POST"
+        action="{% url 'crear_combo' %}">
+
+        {% csrf_token %}
+
 
         <div class="gp-combo-decoracion" aria-hidden="true">
             ❄ 🎁 ❄
@@ -242,9 +267,73 @@
             </div>
         </div>
 
-        <button type="submit" id="gpCrearCombo"
-                class="gp-guardar">
-            🎁 Crear combo con 20 % de descuento
+        <button type="submit" id="gpCrearCombo" class="gp-guardar">
+            Crear combo con 20 % de descuento
+        </button>
+
+    </form>
+</dialog>
+
+<!-- VENTANA EMERGENTE: CREAR PRODUCTO -->
+<dialog
+    id="gpModalProducto"
+    class="gp-modal gp-modal-combo gp-modal-producto"
+    aria-labelledby="gpProductoTitulo">
+
+    <div class="gp-modal-cabecera">
+        <div>
+            <span>✦ GESTIÓN DE PRODUCTOS ✦</span>
+            <h2 id="gpProductoTitulo">
+                Crear nuevo producto
+            </h2>
+        </div>
+
+        <button
+            type="button"
+            class="gp-cerrar"
+            data-cerrar="gpModalProducto"
+            aria-label="Cerrar ventana">
+            ×
+        </button>
+    </div>
+
+    <form
+        method="POST"
+        action="{% url 'crear_producto' %}"
+        enctype="multipart/form-data"
+        class="gp-combo-cuerpo">
+
+        {% csrf_token %}
+
+        <p>
+            Completa los datos para registrar
+            un producto en el inventario.
+        </p>
+
+        {% for campo in form_producto %}
+
+            <label for="{{ campo.id_for_label }}">
+                {{ campo.label }}
+            </label>
+
+            {{ campo }}
+
+            {% for error in campo.errors %}
+                <p class="gp-error" role="alert">
+                    {{ error }}
+                </p>
+            {% endfor %}
+
+        {% endfor %}
+
+        {% for error in form_producto.non_field_errors %}
+            <p class="gp-error" role="alert">
+                {{ error }}
+            </p>
+        {% endfor %}
+
+        <button type="submit" class="gp-guardar">
+            Guardar producto
         </button>
 
     </form>
@@ -271,6 +360,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const modalEditar = document.getElementById('gpModalEditar');
     const modalCombo = document.getElementById('gpModalCombo');
+    const modalProducto = document.getElementById('gpModalProducto');
 
     const precioInput = document.getElementById('gpEditarPrecio');
     const descuentoInput = document.getElementById('gpEditarDescuento');
@@ -358,16 +448,38 @@ document.addEventListener('DOMContentLoaded', function () {
             elemento('strong', '', pesos(precioFinal(producto)))
         );
 
-        informacion.append(
-            precios,
-            elemento('span', 'gp-editar-enlace', '✎ Editar producto')
+        
+        informacion.appendChild(precios);
+
+        if (producto.es_real) {
+            informacion.appendChild(
+            elemento(
+                'span',
+                'gp-editar-enlace',
+                '✓ Guardado en SQLite'
+            )
         );
+
+        tarjeta.classList.add('gp-tarjeta-real');
+
+        } else {
+            informacion.appendChild(
+            elemento(
+                'span',
+                'gp-editar-enlace',
+                '✎ Editar producto'
+                )
+            );
+        }
+
 
         tarjeta.append(foto, informacion);
 
-        tarjeta.addEventListener('click', function () {
+        if (!producto.es_real) {
+            tarjeta.addEventListener('click', function () {
             abrirEditar(producto.id);
-        });
+            });
+        }
 
         return tarjeta;
     }
@@ -521,52 +633,65 @@ document.addEventListener('DOMContentLoaded', function () {
     descuentoInput.addEventListener('input', actualizarPrecioEditar);
 
     // PREPARAR LOS SELECTORES DEL COMBO
-    function prepararCombo() {
+    
+function prepararCombo() {
 
-        const individuales = productos.filter(
-            p => p.tipo === 'individual'
+    const selectUno = document.getElementById('gpProductoUno');
+    const selectDos = document.getElementById('gpProductoDos');
+
+    // Obtener solamente productos reales de SQLite
+    const individuales = productos.filter(
+        p => p.tipo === 'individual'
+          && p.es_real === true
+          && p.db_id != null
+    );
+
+    // Limpiar opciones anteriores
+    selectUno.replaceChildren();
+    selectDos.replaceChildren();
+
+    // Agregar productos a ambos selectores
+    individuales.forEach(function (producto) {
+
+        const texto = producto.nombre + ' · ' +
+            pesos(producto.precio);
+
+        selectUno.add(
+            new Option(texto, String(producto.db_id))
         );
 
-        productoUno.replaceChildren();
-        productoDos.replaceChildren();
+        selectDos.add(
+            new Option(texto, String(producto.db_id))
+        );
+    });
 
-        individuales.forEach(function (producto) {
+    // Seleccionar dos productos diferentes
+    if (individuales.length >= 2) {
 
-            const opcion1 = new Option(
-                producto.nombre + ' · ' + pesos(producto.precio),
-                producto.id
-            );
+        selectUno.value = String(individuales[0].db_id);
+        selectDos.value = String(individuales[1].db_id);
 
-            const opcion2 = new Option(
-                producto.nombre + ' · ' + pesos(producto.precio),
-                producto.id
-            );
-
-            productoUno.add(opcion1);
-            productoDos.add(opcion2);
-        });
-
-        // POR DEFECTO: JAMÓN Y QUESO
-        productoUno.value = '1';
-        productoDos.value = '2';
-
-        nombreCombo.value = 'Combo Jamón + Queso';
-
-        actualizarPrecioCombo();
     }
+
+    // Actualizar el resumen
+    actualizarPrecioCombo();
+}
+
 
     // DESCUENTO AUTOMÁTICO DEL 20 %
     function actualizarPrecioCombo() {
 
         const uno = productos.find(
-            p => String(p.id) === productoUno.value
+        p => p.tipo === 'individual' &&
+            String(p.db_id) === productoUno.value
         );
 
         const dos = productos.find(
-            p => String(p.id) === productoDos.value
+        p => p.tipo === 'individual' &&
+            String(p.db_id) === productoDos.value
         );
 
-        const valido = uno && dos && uno.id !== dos.id;
+        const valido = uno && dos && uno.db_id !== dos.db_id;
 
         errorCombo.hidden = Boolean(valido);
         botonCrear.disabled = !valido;
@@ -602,14 +727,14 @@ document.addEventListener('DOMContentLoaded', function () {
             evento.preventDefault();
 
             const uno = productos.find(
-                p => String(p.id) === productoUno.value
+                p => String(p.db_id) === productoUno.value
             );
 
             const dos = productos.find(
-                p => String(p.id) === productoDos.value
+                p => String(p.db_id) === productoDos.value
             );
 
-            if (!uno || !dos || uno.id === dos.id) return;
+            if (!uno || !dos || uno.db_id === dos.db_id) return;
 
             const nombre = nombreCombo.value.trim();
 
@@ -629,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 imagen: imagenCombo,
                 icono: '🎁',
                 tipo: 'combo',
-                componentes: [uno.id, dos.id]
+                componentes: [uno.db_id, dos.db_id]
             };
 
             productos.push(combo);
@@ -640,6 +765,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
             mostrarProductos();
             modalCombo.close();
+        });
+
+    // ABRIR FORMULARIO DE NUEVO PRODUCTO
+    document.getElementById('gpAbrirProducto')
+        .addEventListener('click', function () {
+            modalProducto.showModal();
         });
 
     // CERRAR VENTANAS
@@ -654,7 +785,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
     // CERRAR AL PULSAR FUERA
-    [modalEditar, modalCombo].forEach(function (modal) {
+    [modalEditar, modalCombo, modalProducto].forEach(function (modal) {
 
         modal.addEventListener('click', function (evento) {
 
@@ -674,7 +805,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     buscar.addEventListener('input', mostrarProductos);
     categoria.addEventListener('change', mostrarProductos);
-
+    {% if abrir_modal_producto %}
+    modalProducto.showModal();
+    {% endif %}
     mostrarProductos();
 
 });

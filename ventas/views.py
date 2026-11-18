@@ -11,7 +11,7 @@ from django.shortcuts import render, redirect
 from django.utils import timezone
 
 from clientes.views import CLIENTES_DEMO
-from productos.views import PRODUCTOS_GESTION_DEMO
+from productos.models import Producto
 from usuarios.models import TurnoEmpleado
 from .models import Venta, DetalleVenta
 
@@ -409,17 +409,29 @@ def ventas_demo(request):
 # CATÁLOGO PARA NUEVA VENTA
 # ==========================================
 
+
+# ==========================================
+# CATÁLOGO REAL PARA NUEVA VENTA
+# ==========================================
+
 def catalogo_para_venta():
 
     catalogo = []
 
-    for producto in PRODUCTOS_GESTION_DEMO:
+    productos = Producto.objects.filter(
+        activo=True
+    ).order_by('nombre')
 
-        precio = Decimal(str(producto['precio']))
+    iconos = {
+        'Quesos': '🧀',
+        'Jamones': '🥩',
+        'Chorizos': '🌭',
+    }
 
-        descuento = Decimal(str(
-            producto.get('descuento', 0)
-        ))
+    for producto in productos:
+
+        precio = producto.precio_venta
+        descuento = Decimal(producto.descuento)
 
         if precio <= 0 or not 0 <= descuento <= 100:
             raise ValueError(
@@ -428,7 +440,8 @@ def catalogo_para_venta():
 
         precio_final = int(
             (
-                precio * (100 - descuento) / 100
+                precio * (Decimal('100') - descuento)
+                / Decimal('100')
             ).quantize(
                 Decimal('1'),
                 rounding=ROUND_HALF_UP
@@ -436,17 +449,22 @@ def catalogo_para_venta():
         )
 
         catalogo.append({
-            'id': producto['id'],
-            'codigo': producto['codigo'],
-            'nombre': producto['nombre'],
-            'categoria': producto['categoria'],
-            'imagen': producto.get('imagen', ''),
-            'icono': producto.get('icono', '🛒'),
+            'id': producto.pk,
+            'codigo': producto.codigo,
+            'nombre': producto.nombre,
+            'categoria': producto.categoria or 'Sin categoría',
+            'imagen': (
+                producto.imagen.url if producto.imagen else ''
+            ),
+            'icono': iconos.get(
+                producto.categoria, '📦'
+            ),
             'precio': precio_final,
             'descuento': int(descuento),
         })
 
     return catalogo
+
 
 
 # ==========================================
