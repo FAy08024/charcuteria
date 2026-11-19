@@ -84,22 +84,16 @@
                     <div class="cp-tarjeta-cabecera">
 
                         <div class="cp-avatar">
-
                             {% if cuenta.cliente.foto %}
-
-                                <img
-                                    src="{% static cuenta.cliente.foto %}"
-                                    alt="Foto de {{ cuenta.cliente.nombre }}"
-                                    loading="lazy"
-                                >
-
-                            {% else %}
-
-                                {{ cuenta.cliente.iniciales }}
-
-                            {% endif %}
-
-                        </div>
+                        <img
+                            src="{{ cuenta.cliente.foto.url }}"
+                            alt="{{ cuenta.cliente.nombre }}"
+                            loading="lazy"
+                        >
+                        {% else %}
+                        <span>{{ cuenta.cliente.nombre|slice:":1"|upper }}</span>
+                        {% endif %}
+                    </div>
 
                         <div>
 

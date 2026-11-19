@@ -184,8 +184,8 @@ def historial_demo(request):
     clientes = list(Cliente.objects.values())
 
     clientes_por_codigo = {
-        cliente['codigo']: cliente['id']
-        for cliente in clientes
+    cliente['documento']: cliente['id']
+    for cliente in clientes
     }
 
     # MOVIMIENTOS FICTICIOS EXISTENTES

@@ -67,11 +67,11 @@ def obtener_cuentas_demo():
         c['id']: c for c in clientes_db
     }
 
-    clientes_por_codigo = {
-        c['codigo']: c for c in clientes_db
+    clientes_por_documento = {
+        c['documento']: c for c in clientes_db
     }
 
-    # SUMAR LOS ABONOS GUARDADOS EN SQLITE
+    # Abonos reales de SQLite
     abonos_por_cuenta = {
         fila['cuenta_numero']: fila['abonado']
         for fila in Abono.objects.values(
@@ -83,132 +83,57 @@ def obtener_cuentas_demo():
 
     cuentas = []
 
-    # ======================================
-    # CUENTAS FICTICIAS EXISTENTES
-    # ======================================
-
-    for cuenta in CUENTAS_DEMO:
-
-        datos = cuenta.copy()
-
-        datos['cliente'] = clientes_por_id[
-            cuenta['cliente_id']
-        ]
-
-        capital = Decimal(cuenta['capital'])
-        tasa = Decimal(cuenta['tasa']) / Decimal('100')
-
-        interes = int(
-            capital * tasa * cuenta['meses_transcurridos']
-        )
-
-        total = cuenta['capital'] + interes
-
-        # ABONOS ANTERIORES + ABONOS NUEVOS
-        abonos = (
-            cuenta['abonos'] +
-            abonos_por_cuenta.get(cuenta['numero'], 0)
-        )
-
-        saldo = max(total - abonos, 0)
-
-        datos['interes'] = interes
-        datos['total'] = total
-        datos['abonos'] = abonos
-        datos['saldo'] = saldo
-
-        datos['estado'] = (
-            'Pagada' if saldo == 0 else 'Pendiente'
-        )
-
-        datos['venta_id'] = None
-
-        datos['meses_restantes'] = max(
-            cuenta['plazo_meses'] -
-            cuenta['meses_transcurridos'],
-            0
-        )
-
-        datos['porcentaje'] = min(
-            int(
-                cuenta['meses_transcurridos']
-                / cuenta['plazo_meses'] * 100
-            ),
-            100
-        )
-
-        datos['capital_formato'] = formato_pesos(
-            cuenta['capital']
-        )
-
-        datos['interes_formato'] = formato_pesos(interes)
-        datos['total_formato'] = formato_pesos(total)
-        datos['abonos_formato'] = formato_pesos(abonos)
-        datos['saldo_formato'] = formato_pesos(saldo)
-
-        datos['meses'] = [
-            {
-                'numero': i,
-                'transcurrido': (
-                    i <= cuenta['meses_transcurridos']
-                )
-            }
-            for i in range(
-                1, cuenta['plazo_meses'] + 1
-            )
-        ]
-
-        cuentas.append(datos)
-
-    # ======================================
-    # NUEVAS VENTAS A CRÉDITO
-    # ======================================
-
+    # Ventas reales a crédito
     ventas_credito = Venta.objects.filter(
         tipo='Crédito'
     ).order_by('-fecha')
 
     for venta in ventas_credito:
 
-        cliente = clientes_por_codigo.get(
-            venta.cliente_codigo,
-            {
-                'id': None,
-                'codigo': venta.cliente_codigo,
-                'nombre': venta.cliente_nombre,
-            }
-        )
+        cliente = None
+
+        # Primero buscar por relación real
+        if venta.cliente_id is not None:
+                cliente = clientes_por_id.get(venta.cliente_id)
+
+        # Compatibilidad con ventas por documento
+        if cliente is None:
+                cliente = clientes_por_documento.get(
+                    venta.cliente_codigo
+                )
+
+        if cliente is None:
+                cliente = {
+                    'id': None,
+                    'nombre': venta.cliente_nombre,
+                    'documento': venta.cliente_codigo,
+                }
 
         abonos = abonos_por_cuenta.get(
             venta.numero, 0
         )
 
-        saldo = max(
-            venta.total - abonos, 0
-        )
-
+        saldo = max(venta.total - abonos, 0)
         fecha = timezone.localtime(venta.fecha)
 
         cuentas.append({
-            'cliente_id': cliente.pk,
+            'cliente_id': cliente['id'],
             'cliente': cliente,
             'numero': venta.numero,
             'capital': venta.total,
             'tasa': '0',
-            'abonos': abonos,
-            'meses_transcurridos': 0,
-            'plazo_meses': 0,
-            'inicio': fecha.strftime('%d/%m/%Y'),
-            'vencimiento': 'Sin fecha definida',
             'interes': 0,
             'total': venta.total,
+            'abonos': abonos,
             'saldo': saldo,
-            'estado': (
-                'Pagada' if saldo == 0 else 'Pendiente'
-            ),
+            'estado': 'Pagada' if saldo == 0 else 'Pendiente',
             'venta_id': venta.pk,
+            'meses_transcurridos': 0,
+            'plazo_meses': 0,
             'meses_restantes': 0,
             'porcentaje': 0,
+            'inicio': fecha.strftime('%d/%m/%Y'),
+            'vencimiento': 'Sin fecha definida',
             'meses': [],
             'capital_formato': formato_pesos(venta.total),
             'interes_formato': formato_pesos(0),
@@ -227,11 +152,11 @@ def obtener_cuentas_agrupadas():
 
     grupos = {}
 
-    # INCLUIR LOS 6 CLIENTES REGISTRADOS
     for cliente in Cliente.objects.all():
 
-        grupos[cliente['id']] = {
+        grupos[cliente.pk] = {
             'cliente_id': cliente.pk,
+            'cliente': cliente,
             'numero': 'Sin créditos',
             'capital': 0,
             'interes': 0,
@@ -496,32 +421,25 @@ def registrar_abono(request):
         if cuenta['saldo'] > 0
     ]
 
-    # AGRUPAR LAS DEUDAS POR CLIENTE
+    
+        # AGRUPAR LAS DEUDAS POR CLIENTE
     clientes_con_deuda = []
 
-    for cliente in Cliente.objects.all():
+    for grupo in obtener_cuentas_agrupadas():
 
-        creditos = [
-            cuenta
-            for cuenta in cuentas_pendientes
-            if cuenta['cliente_id'] == cliente.pk
-        ]
+        if grupo['saldo'] <= 0:
+            continue
 
-        if creditos:
+        cliente = grupo['cliente']
 
-            saldo_total = sum(
-                cuenta['saldo']
-                for cuenta in creditos
-            )
-
-            clientes_con_deuda.append({
-                'id': cliente['id'],
-                'nombre': cliente['nombre'],
-                'codigo': cliente['codigo'],
-                'saldo': saldo_total,
-                'saldo_formato': formato_pesos(saldo_total),
-                'cantidad_creditos': len(creditos)
-            })
+        clientes_con_deuda.append({
+            'id': cliente.pk,
+            'nombre': cliente.nombre,
+            'codigo': cliente.documento,
+            'saldo': grupo['saldo'],
+            'saldo_formato': formato_pesos(grupo['saldo']),
+            'cantidad_creditos': grupo['creditos_pendientes'],
+        })
 
     ultimos_abonos = Abono.objects.select_related(
         'empleado'

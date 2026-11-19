@@ -41,20 +41,12 @@
         <div class="cp-perfil">
 
             <div class="cp-avatar cp-avatar-grande">
-
-                {% if cuenta.cliente.foto %}
-
-                    <img
-                        src="{% static cuenta.cliente.foto %}"
-                        alt="Foto de {{ cuenta.cliente.nombre }}"
-                    >
-
-                {% else %}
-
-                    {{ cuenta.cliente.iniciales }}
-
-                {% endif %}
-
+                    {% if cuenta.cliente.foto %}
+                        <img src="{{ cuenta.cliente.foto.url }}"
+                        alt="{{ cuenta.cliente.nombre }}">
+                    {% else %}
+                        <span>{{ cuenta.cliente.nombre|slice:":1"|upper }}</span>
+                    {% endif %}
             </div>
 
             <div>

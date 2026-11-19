@@ -148,11 +148,14 @@ def facturas_demo(request):
 
     ventas = Venta.objects.filter(
         fecha__date=timezone.localdate()
-    ).select_related(
-        'cliente'
     ).prefetch_related(
         'detalles'
     ).order_by('-fecha')
+
+    clientes_por_documento = {
+        cliente.documento: cliente.pk
+        for cliente in clientes
+    }
 
     facturas = []
 
@@ -167,7 +170,7 @@ def facturas_demo(request):
         ]
 
         facturas.append({
-            'cliente_id': venta.cliente_id or '',
+            'cliente_id': clientes_por_documento.get(venta.cliente_codigo, ''),
             'numero': venta.numero,
             'cliente': venta.cliente_nombre,
             'hora': timezone.localtime(
@@ -360,23 +363,18 @@ def obtener_ventas_ficticias():
 
 def obtener_ventas_demo():
 
-    # Primero cargamos las 12 ventas ficticias.
-    ventas = obtener_ventas_ficticias()
+    ventas = []
 
-    # Después consultamos las ventas reales guardadas.
     ventas_guardadas = Venta.objects.prefetch_related(
         'detalles'
-    ).all()
+    ).order_by('-fecha')
 
     for venta in ventas_guardadas:
 
         fecha = timezone.localtime(venta.fecha)
 
-        productos = []
-
-        for detalle in venta.detalles.all():
-
-            productos.append({
+        productos = [
+            {
                 'nombre': detalle.producto_nombre,
                 'cantidad': detalle.cantidad,
                 'precio': detalle.precio_unitario,
@@ -386,7 +384,9 @@ def obtener_ventas_demo():
                 'importe_formato': formato_venta(
                     detalle.importe
                 ),
-            })
+            }
+            for detalle in venta.detalles.all()
+        ]
 
         ventas.append({
             'numero': venta.numero,
@@ -402,16 +402,6 @@ def obtener_ventas_demo():
             'total': venta.total,
             'total_formato': formato_venta(venta.total),
         })
-
-    # Ordenamos todo de la venta más reciente a la más antigua.
-    ventas.sort(
-        key=lambda venta: (
-            venta['fecha_iso'],
-            venta['hora'],
-            venta['numero']
-        ),
-        reverse=True
-    )
 
     return ventas
 
@@ -735,11 +725,11 @@ def nueva_venta(request):
             # ==========================================
 
             
+            # DESCONTAR INVENTARIO UNA SOLA VEZ
             with transaction.atomic():
 
-            # DESCONTAR INVENTARIO UNA SOLA VEZ
+                # Descontar inventario
                 for item in productos:
-
                     cantidad = Decimal(str(item['cantidad']))
 
                     actualizado = Producto.objects.filter(
@@ -752,71 +742,35 @@ def nueva_venta(request):
 
                     if actualizado != 1:
                         raise ValueError(
-                            'Existencias insuficientes de '
-                            + item['nombre']
+                            f"Existencias insuficientes de {item['nombre']}."
                         )
 
+                # Guardar la venta
                 venta = Venta.objects.create(
-                # Conserva aquí los campos originales
-                # de tu venta, sin reemplazarlos.
+                            cliente=cliente_registrado,
+                            cliente_nombre=nombre,
+                            cliente_codigo=codigo,
+                            tipo=tipo,
+                            metodo_pago=metodo,
+                            estado=estado,
+                            total=total,
+                            empleado=request.user
                 )
 
-
-                if actualizado != 1:
-                    raise ValueError(
-                    f"No hay existencias suficientes de "
-                    f"{item['nombre']}."
-                )
-                
-                # DESCONTAR INVENTARIO
-                for item in productos:
-
-                    cantidad = Decimal(
-                        str(item['cantidad'])
+                # Guardar los productos vendidos
+                detalles = [
+                    DetalleVenta(
+                        venta=venta,
+                        producto_codigo=item['codigo'],
+                        producto_nombre=item['nombre'],
+                        cantidad=item['cantidad'],
+                        precio_unitario=item['precio'],
+                        importe=item['importe']
                     )
+                    for item in productos
+                ]
 
-                    actualizado = Producto.objects.filter(
-                        pk=item['id'],
-                        activo=True,
-                        existencias__gte=cantidad
-                    ).update(
-                        existencias=F('existencias') - cantidad
-                    )
-
-                    if actualizado != 1:
-                        raise ValueError(
-                            'Existencias insuficientes de '
-                            + item['nombre']
-                        )
-
-                venta = Venta.objects.create(
-                    cliente_nombre=nombre,
-                    cliente_codigo=codigo,
-                    tipo=tipo,
-                    metodo_pago=metodo,
-                    estado=estado,
-                    total=total,
-                    empleado=request.user
-                )
-
-                detalles = []
-
-                for producto in productos:
-
-                    detalles.append(
-                        DetalleVenta(
-                            venta=venta,
-                            producto_codigo=producto['codigo'],
-                            producto_nombre=producto['nombre'],
-                            cantidad=producto['cantidad'],
-                            precio_unitario=producto['precio'],
-                            importe=producto['importe']
-                        )
-                    )
-
-                DetalleVenta.objects.bulk_create(
-                    detalles
-                )
+                DetalleVenta.objects.bulk_create(detalles)
 
             messages.success(
                 request,
@@ -835,7 +789,7 @@ def nueva_venta(request):
     'ventas/nueva_venta.html',
     {
         'catalogo': catalogo,
-        'clientes': list(Cliente.objects.values()),
+        'clientes': Cliente.objects.all().order_by('nombre'),
         'error': error,
         'ventas_recientes': Venta.objects.all()[:5],
     }

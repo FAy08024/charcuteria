@@ -97,11 +97,12 @@
 
                         <div class="cliente-avatar">
                             {% if cliente.foto %}
-                                    <img src="{{ cliente.foto.url }}"
-                                    alt="{{ cliente.nombre }}">
+                                 
+                            <img src="{{ cliente.foto.url }}" alt="{{ cliente.nombre }}">
                             {% else %}
-                                {{ cliente.iniciales }}
+                            {{ cliente.nombre|slice:":1"|upper }}
                             {% endif %}
+                            
                             </div>
 
                         <div class="cliente-nombre">
@@ -136,26 +137,24 @@
                     </div>
 
                     <!-- MINI PERFIL FLOTANTE -->
-                    <div class="cliente-mini-perfil"
-                         aria-hidden="true">
+                    <div class="cliente-mini-perfil" aria-hidden="true">
 
                         <div class="mini-perfil-decoracion">✦</div>
 
-                        <div class="mini-perfil-avatar">
+                            <div class="mini-perfil-avatar">
                             {% if cliente.foto %}
-                                <img src="{% static cliente.foto %}"
-                                     alt="">
+                                <img src="{{ cliente.foto.url }}" alt="{{ cliente.nombre }}">
                             {% else %}
-                                {{ cliente.iniciales }}
+                                <span>{{ cliente.nombre|slice:":1"|upper }}</span>
                             {% endif %}
-                        </div>
+                            </div>
 
                         <strong>{{ cliente.nombre }}</strong>
 
                         <span>{{ cliente.get_tipo_display }}</span>
 
                         <p>
-                            Registrado el {{ cliente.fecha }}
+                            Registrado el {{ cliente.fecha_registro|date:"d/m/Y" }}
                         </p>
 
                     </div>

@@ -1,6 +1,7 @@
 
 {% extends 'base.html' %}
 {% load static %}
+{% get_media_prefix as MEDIA_PREFIX %}
 
 {% block title %}Historial | Charcutería{% endblock %}
 
@@ -64,8 +65,8 @@
                         data-codigo="{{ cliente.codigo }}"
                         data-tipo="{{ cliente.tipo }}"
                         data-fecha="{{ cliente.fecha }}"
-                        data-foto="{% if cliente.foto %}{% static cliente.foto %}{% endif %}"
-                        data-iniciales="{{ cliente.iniciales }}"
+                        data-foto="{% if cliente.foto %}/media/{{ cliente.foto }}{% endif %}"
+                        data-iniciales="{{ cliente.nombre|slice:':1'|upper }}"
                         data-ventas="{{ cliente.cantidad_ventas }}"
                         data-facturas="{{ cliente.cantidad_facturas }}"
                         data-abonos="{{ cliente.cantidad_abonos }}"
@@ -73,16 +74,12 @@
                     >
 
                         <div class="hist-cliente-avatar">
-
                             {% if cliente.foto %}
-                                <img
-                                    src="{% static cliente.foto %}"
-                                    alt="Foto de {{ cliente.nombre }}"
-                                >
+                                <img src="/media/{{ cliente.foto }}"
+                                    alt="{{ cliente.nombre }}">
                             {% else %}
-                                {{ cliente.iniciales }}
+                            <span>{{ cliente.nombre|slice:":1"|upper }}</span>
                             {% endif %}
-
                         </div>
 
                         <div class="hist-cliente-datos">
@@ -110,12 +107,12 @@
 
                         <img
                             id="histFoto"
-                            {% if cliente_inicial.foto %}
-                                src="{% static cliente_inicial.foto %}"
-                            {% else %}
-                                hidden
-                            {% endif %}
-                            alt=""
+                        {% if cliente_inicial.foto %}
+                        src="/media/{{ cliente_inicial.foto }}"
+                        {% else %}
+                        hidden
+                        {% endif %}
+                        alt="{{ cliente_inicial.nombre }}"
                         >
 
                         <span

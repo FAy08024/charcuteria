@@ -100,7 +100,7 @@ def obtener_recordatorios():
 
         cliente = cuenta['cliente']
         nombre = cliente['nombre']
-        codigo = cliente['codigo']
+        codigo = cliente['documento']
         numero = cuenta['numero']
 
         saldo_formato = formato_pesos_recordatorio(
