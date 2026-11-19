@@ -29,5 +29,9 @@ urlpatterns = [
         views.resolver_incidencia,
         name='resolver_incidencia'
     ),
-
+    path(
+    'entradas/registrar/',
+    views.registrar_entrada,
+    name='registrar_entrada'
+),
 ]

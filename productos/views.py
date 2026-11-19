@@ -131,8 +131,7 @@ def contexto_productos(form=None, abrir_modal=False):
         })
     
     return {
-    'productos': productos_reales,
-    'combos': combos_reales,
+    'productos': productos_reales + combos_reales,
     'form_producto': (
         form if form is not None else ProductoForm()
     ),

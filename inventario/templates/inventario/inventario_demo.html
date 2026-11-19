@@ -1,6 +1,6 @@
 
 {% extends 'base.html' %}
-{% load static %}
+{% load static l10n %}
 
 {% block title %}Inventario | Charcutería{% endblock %}
 
@@ -22,12 +22,13 @@
             <span class="inv-copo" aria-hidden="true">❄</span>
         </header>
 
-        <div class="inv-navegacion">
-            <a href="{% url 'panel_usuario' %}">
-                ← Volver al panel
-            </a>
-            <span>DATOS DE DEMOSTRACIÓN</span>
-        </div>
+        {% if messages %}
+            {% for mensaje in messages %}
+                <p class="inv-aviso" role="status">
+                    {{ mensaje }}
+                </p>
+            {% endfor %}
+        {% endif %}
 
         <!-- INDICADORES -->
         <div class="inv-resumen">
@@ -112,23 +113,24 @@
                 data-nombre="{{ producto.nombre }}"
                 data-codigo="{{ producto.codigo }}"
                 data-categoria="{{ producto.categoria }}"
-                data-stock="{{ producto.stock }}"
-                data-minimo="{{ producto.minimo }}"
+                data-stock="{{ producto.stock|unlocalize }}"
+                data-minimo="{{ producto.minimo|unlocalize }}"
                 data-unidad="{{ producto.unidad }}"
-                data-imagen="{% static producto.imagen %}"
+                data-imagen="{{ producto.imagen }}"
                 data-proveedor="{{ producto.proveedor }}"
                 data-fecha="{{ producto.ultima_entrada }}"
                 data-descripcion="{{ producto.descripcion }}"
                 data-estado="{{ producto.estado }}"
             >
 
-                <div class="inv-producto-foto">
-                    <img
-                        src="{% static producto.imagen %}"
-                        alt="{{ producto.nombre }}"
-                        loading="lazy"
-                    >
-                </div>
+                {% if producto.imagen %}
+                <img
+                    src="{{ producto.imagen }}"
+                    alt="{{ producto.nombre }}"
+                    loading="lazy">
+                {% else %}
+                <span aria-label="Producto sin imagen">📦</span>
+                {% endif %}
 
                 <div class="inv-producto-info">
                     <small>{{ producto.codigo }}</small>
@@ -176,10 +178,10 @@
 
                 <div class="inv-entrada">
                     <div>
-                        <strong>{{ entrada.producto }}</strong>
-                        <span>{{ entrada.fecha }}</span>
+                        <strong>{{ entrada.producto.nombre }}</strong>
+                        <span>{{ entrada.fecha|date:"d/m/Y H:i" }}</span>
                     </div>
-                    <strong>+{{ entrada.cantidad }} unidades</strong>
+                    <strong>+{{ entrada.cantidad }} {{ entrada.producto.unidad_medida }}</strong>
                 </div>
 
                 {% endfor %}
@@ -260,7 +262,20 @@
             </div>
 
             <!-- REGISTRAR ENTRADA -->
-            <form id="invFormulario" class="inv-formulario">
+            
+            <form
+                id="invFormulario"
+                class="inv-formulario"
+                method="POST"
+                action="{% url 'registrar_entrada' %}">
+
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    id="invProductoCodigo"
+                    name="producto_codigo">
+
 
                 <label for="invCantidad">
                     Registrar entrada de mercancía
@@ -270,8 +285,9 @@
                     <input
                         type="number"
                         id="invCantidad"
-                        min="1"
-                        step="1"
+                        name="cantidad"
+                        min="0.001"
+                        step="0.001"
                         placeholder="Cantidad"
                         required
                     >
@@ -282,7 +298,7 @@
                 </div>
 
                 <small>
-                    Simulación: no modifica SQLite.
+                    La entrada se registrará en el inventario.
                 </small>
 
                 <p id="invMensaje" role="status" aria-live="polite"></p>
@@ -401,8 +417,19 @@ document.addEventListener('DOMContentLoaded', function () {
     function abrirProducto(producto) {
         productoActual = producto;
         const datos = producto.dataset;
+        document.getElementById(
+            'invProductoCodigo'
+        ).value = datos.codigo;
 
-        document.getElementById('invModalImagen').src = datos.imagen;
+        const imagenModal = document.getElementById('invModalImagen');
+
+        imagenModal.hidden = !datos.imagen;
+
+        if (datos.imagen) {
+            imagenModal.src = datos.imagen;
+        } else {
+            imagenModal.removeAttribute('src');
+        }
         document.getElementById('invModalImagen').alt =
             'Foto de ' + datos.nombre;
 
@@ -450,57 +477,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (fuera) modal.close();
     });
 
-    formulario.addEventListener('submit', function (evento) {
-        evento.preventDefault();
-
-        if (!productoActual) return;
-
-        const entrada = Number(cantidad.value);
-        const anterior = Number(productoActual.dataset.stock);
-        const nuevo = anterior + entrada;
-
-        if (!Number.isSafeInteger(entrada) ||
-            entrada <= 0 ||
-            !Number.isSafeInteger(nuevo)) {
-            document.getElementById('invMensaje').textContent =
-                'Ingresa una cantidad válida.';
-            return;
-        }
-
-        productoActual.dataset.stock = String(nuevo);
-
-        actualizarProducto(productoActual);
-        actualizarResumen();
-        actualizarFiltros();
-
-        // Agregar movimiento ficticio al registro
-        const fila = document.createElement('div');
-        fila.className = 'inv-entrada';
-
-        const informacion = document.createElement('div');
-
-        const nombre = document.createElement('strong');
-        nombre.textContent = productoActual.dataset.nombre;
-
-        const fecha = document.createElement('span');
-        fecha.textContent = new Date().toLocaleString('es-CO');
-
-        informacion.append(nombre, fecha);
-
-        const valor = document.createElement('strong');
-        valor.textContent =
-            '+' + entrada + ' ' + productoActual.dataset.unidad;
-
-        fila.append(informacion, valor);
-
-        document.getElementById('invEntradasLista').prepend(fila);
-
-        document.getElementById('invMensaje').textContent =
-            'Entrada simulada correctamente. Nuevo stock: ' +
-            nuevo + ' ' + productoActual.dataset.unidad;
-
-        cantidad.value = '';
-    });
+    
 
     buscar.addEventListener('input', actualizarFiltros);
     filtro.addEventListener('change', actualizarFiltros);

@@ -13,7 +13,9 @@ from django.views.decorators.http import require_POST
 from .forms import IncidenciaInventarioForm
 from .models import AjusteExistencia, IncidenciaInventario
 
-
+from decimal import Decimal, InvalidOperation
+from productos.models import Producto
+from .models import EntradaMercancia
 # PRODUCTOS FICTICIOS DEL INVENTARIO
 PRODUCTOS_INVENTARIO_DEMO = [
     {
@@ -124,43 +126,57 @@ def es_empleado_inventario(usuario):
 # STOCK ACTUALIZADO
 # ==========================================
 
-def obtener_productos_inventario():
 
-    ajustes = {
-        ajuste.codigo: ajuste.diferencia
-        for ajuste in AjusteExistencia.objects.all()
-    }
+def obtener_productos_inventario():
 
     productos = []
 
-    for producto in PRODUCTOS_INVENTARIO_DEMO:
+    consulta = Producto.objects.filter(
+        activo=True
+    ).order_by('nombre')
 
-        datos = producto.copy()
+    for p in consulta:
 
-        datos['stock'] = max(
-            0,
-            producto['stock'] +
-            ajustes.get(producto['codigo'], 0)
-        )
+        stock = p.existencias
+        minimo = p.stock_minimo
 
-        if datos['stock'] == 0:
+        if stock == 0:
+            estado = 'agotado'
+            estado_texto = 'Agotado'
 
-            datos['estado'] = 'agotado'
-            datos['estado_texto'] = 'Agotado'
-
-        elif datos['stock'] <= datos['minimo']:
-
-            datos['estado'] = 'bajo'
-            datos['estado_texto'] = 'Stock bajo'
+        elif stock <= minimo:
+            estado = 'bajo'
+            estado_texto = 'Stock bajo'
 
         else:
+            estado = 'disponible'
+            estado_texto = 'Disponible'
 
-            datos['estado'] = 'disponible'
-            datos['estado_texto'] = 'Disponible'
+        ultima = p.entradas.order_by('-fecha').first()
 
-        productos.append(datos)
+        productos.append({
+            'id': p.pk,
+            'codigo': p.codigo,
+            'nombre': p.nombre,
+            'categoria': p.categoria or 'Sin categoría',
+            'imagen': p.imagen.url if p.imagen else '',
+            'stock': stock,
+            'minimo': minimo,
+            'unidad': p.unidad_medida,
+            'proveedor': 'No registrado',
+            'ultima_entrada': (
+                timezone.localtime(
+                    ultima.fecha
+                ).strftime('%d/%m/%Y')
+                if ultima else 'Sin registros'
+            ),
+            'descripcion': p.descripcion or '',
+            'estado': estado,
+            'estado_texto': estado_texto,
+        })
 
     return productos
+
 
 
 # ==========================================
@@ -378,74 +394,61 @@ def resolver_incidencia(request, incidencia_id):
 
             return redirect('inventario_incidencias')
 
+        
         if accion in ['baja', 'reemplazar']:
 
-            productos = {
-                p['codigo']: p
-                for p in obtener_productos_inventario()
-            }
+            cantidad = Decimal(incidencia.cantidad)
 
-            original = productos.get(
-                incidencia.producto_codigo
-            )
+            original = Producto.objects.filter(
+                codigo=incidencia.producto_codigo,
+                activo=True
+            ).first()
 
             if original is None:
-
                 messages.error(
                     request,
-                    'El producto reportado ya no existe.'
+                    'El producto original no existe.'
                 )
-
                 return redirect('inventario_incidencias')
 
-            cantidad = incidencia.cantidad
-
-            if original['stock'] < cantidad:
-
-                messages.error(
-                    request,
-                    'No hay suficientes unidades para '
-                    'realizar este ajuste.'
-                )
-
-                return redirect('inventario_incidencias')
-
-            cambios = {
-                incidencia.producto_codigo: -cantidad
-            }
+            reemplazo = None
 
             if accion == 'reemplazar':
+                reemplazo = Producto.objects.filter(
+                    codigo=codigo_reemplazo,
+                    activo=True
+                ).first()
 
-                if codigo_reemplazo not in productos:
-
+                if reemplazo is None:
                     messages.error(
                         request,
-                        'Selecciona un producto de reemplazo válido.'
+                        'El producto de reemplazo no existe.'
                     )
-
                     return redirect('inventario_incidencias')
 
-                # SALE LA MERCANCÍA AFECTADA Y ENTRA
-                # MERCANCÍA SANA FÍSICAMENTE RECIBIDA.
-                cambios[codigo_reemplazo] = (
-                    cambios.get(codigo_reemplazo, 0)
-                    + cantidad
+            # Retirar mercancía afectada
+            actualizado = Producto.objects.filter(
+                pk=original.pk,
+                existencias__gte=cantidad
+            ).update(
+                existencias=F('existencias') - cantidad
+            )
+
+            if actualizado != 1:
+                messages.error(
+                    request,
+                    'No hay existencias suficientes.'
                 )
+                return redirect('inventario_incidencias')
 
-            for codigo, diferencia in cambios.items():
-
-                if diferencia == 0:
-                    continue
-
-                AjusteExistencia.objects.get_or_create(
-                    codigo=codigo
-                )
-
-                AjusteExistencia.objects.filter(
-                    codigo=codigo
+            # Registrar mercancía sana recibida
+            if reemplazo is not None:
+                Producto.objects.filter(
+                    pk=reemplazo.pk
                 ).update(
-                    diferencia=F('diferencia') + diferencia
+                    existencias=F('existencias') + cantidad
                 )
+
 
         # CERRAR EL REPORTE
         incidencia.estado = (
@@ -497,7 +500,7 @@ def inventario_demo(request):
 
     resumen = {
         'total_productos': len(productos),
-        'total_unidades': sum(p['stock'] for p in productos),
+        'total_unidades': sum( 1 for p in productos if p['stock'] > 0),
         'stock_bajo': sum(
             1 for p in productos if p['estado'] == 'bajo'
         ),
@@ -508,6 +511,80 @@ def inventario_demo(request):
 
     return render(request, 'inventario/inventario_demo.html', {
         'productos': productos,
-        'entradas': ENTRADAS_INVENTARIO_DEMO,
+        'entradas': EntradaMercancia.objects.select_related(
+            'producto', 'usuario'
+        ).order_by('-fecha')[:15],
         'resumen': resumen,
     })
+    
+@login_required(login_url='login')
+@require_POST
+def registrar_entrada(request):
+
+    if not es_administrador_inventario(request.user):
+        raise PermissionDenied(
+            'Solo el administrador puede registrar entradas.'
+        )
+
+    codigo = request.POST.get(
+        'producto_codigo', ''
+    ).strip()
+
+    texto = request.POST.get(
+        'cantidad', ''
+    ).strip().replace(',', '.')
+
+    try:
+        if not 1 <= len(texto) <= 16:
+            raise ValueError()
+
+        cantidad = Decimal(texto)
+
+        if (
+            not cantidad.is_finite()
+            or cantidad <= 0
+            or cantidad > Decimal('999999999.999')
+            or cantidad != cantidad.quantize(
+                Decimal('0.001')
+            )
+        ):
+            raise ValueError()
+
+    except (InvalidOperation, ValueError):
+        messages.error(
+            request,
+            'Ingresa una cantidad positiva con máximo '
+            'tres decimales.'
+        )
+        return redirect('inventario_demo')
+
+    with transaction.atomic():
+
+        producto = get_object_or_404(
+            Producto,
+            codigo=codigo,
+            activo=True
+        )
+
+        # Actualizar existencias reales
+        Producto.objects.filter(
+            pk=producto.pk
+        ).update(
+            existencias=F('existencias') + cantidad
+        )
+
+        # Guardar el historial de entrada
+        EntradaMercancia.objects.create(
+            producto=producto,
+            usuario=request.user,
+            cantidad=cantidad
+        )
+
+    messages.success(
+        request,
+        f'Entrada registrada: {cantidad} '
+        f'{producto.unidad_medida} de {producto.nombre}.'
+    )
+
+    return redirect('inventario_demo')
+

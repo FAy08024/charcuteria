@@ -23,11 +23,13 @@
         </header>
 
         <div class="gp-navegacion">
-            <a href="{% url 'panel_usuario' %}">
-                ← Volver al panel
-            </a>
-            <span>DATOS DE DEMOSTRACIÓN</span>
-        </div>
+            {% if messages %}
+                {% for mensaje in messages %}
+                <div class="gp-aviso" role="status">
+                    {{ mensaje }}
+                </div>
+                {% endfor %}
+            {% endif %}
 
         <!-- CONTADORES -->
         <div class="gp-resumen">
@@ -228,16 +230,25 @@
         <input
             type="text"
             id="gpComboNombre"
+            name="nombre"
             value="Combo Jamón + Queso"
             maxlength="100"
             required
         >
 
         <label for="gpProductoUno">Primer producto</label>
-        <select id="gpProductoUno" required></select>
+        <select
+            id="gpProductoUno"
+            name="producto_uno"
+            required>
+        </select>
 
         <label for="gpProductoDos">Segundo producto</label>
-        <select id="gpProductoDos" required></select>
+        <select
+            id="gpProductoDos"
+            name="producto_dos"
+            required>
+        </select>
 
         <p id="gpComboError" class="gp-error" role="alert" hidden>
             Debes seleccionar dos productos diferentes.
@@ -720,54 +731,10 @@ function prepararCombo() {
     productoUno.addEventListener('change', actualizarPrecioCombo);
     productoDos.addEventListener('change', actualizarPrecioCombo);
 
-    // CREAR UN COMBO EN MEMORIA
-    document.getElementById('gpFormularioCombo')
-        .addEventListener('submit', function (evento) {
 
-            evento.preventDefault();
 
-            const uno = productos.find(
-                p => String(p.db_id) === productoUno.value
-            );
-
-            const dos = productos.find(
-                p => String(p.db_id) === productoDos.value
-            );
-
-            if (!uno || !dos || uno.db_id === dos.db_id) return;
-
-            const nombre = nombreCombo.value.trim();
-
-            if (!nombre) return;
-
-            const numero = String(contadorCombos).padStart(3, '0');
-
-            const combo = {
-                id: 'combo-' + contadorCombos,
-                codigo: 'COM-' + numero,
-                nombre: nombre,
-                categoria: 'Combos',
-                descripcion: 'Incluye ' + uno.nombre + ' y ' +
-                    dos.nombre + '. Promoción especial del 20%.',
-                precio: uno.precio + dos.precio,
-                descuento: 20,
-                imagen: imagenCombo,
-                icono: '🎁',
-                tipo: 'combo',
-                componentes: [uno.db_id, dos.db_id]
-            };
-
-            productos.push(combo);
-            contadorCombos++;
-
-            buscar.value = '';
-            categoria.value = 'todos';
-
-            mostrarProductos();
-            modalCombo.close();
-        });
-
-    // ABRIR FORMULARIO DE NUEVO PRODUCTO
+    
+        // ABRIR FORMULARIO DE NUEVO PRODUCTO
     document.getElementById('gpAbrirProducto')
         .addEventListener('click', function () {
             modalProducto.showModal();

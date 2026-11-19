@@ -68,9 +68,13 @@
                                  data-busqueda="{{ producto.nombre|lower }} {{ producto.codigo|lower }}">
 
                             <div class="ia-producto-foto">
-                                <img src="{% static producto.imagen %}"
-                                     alt="{{ producto.nombre }}"
-                                     loading="lazy">
+                                {% if producto.imagen %}
+                                    <img src="{{ producto.imagen }}"
+                                    alt="{{ producto.nombre }}"
+                                    loading="lazy">
+                                {% else %}
+                                    <span aria-label="Producto sin imagen">📦</span>
+                                {% endif %}
                             </div>
 
                             <div class="ia-producto-info">

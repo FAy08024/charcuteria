@@ -7,8 +7,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import F
 from django.shortcuts import render, redirect
 from django.utils import timezone
+
 
 from clientes.views import CLIENTES_DEMO
 from productos.models import Producto
@@ -694,6 +696,46 @@ def nueva_venta(request):
             # ==========================================
 
             with transaction.atomic():
+                 
+                # DESCONTAR EXISTENCIAS DE PRODUCTOS VENDIDOS
+                for item in productos:
+
+                    cantidad = Decimal(str(item['cantidad']))
+
+                    actualizado = Producto.objects.filter(
+                        pk=item['id'],
+                        activo=True,
+                    existencias__gte=cantidad
+                    ).update(
+                    existencias=F('existencias') - cantidad
+                    )
+
+                if actualizado != 1:
+                    raise ValueError(
+                    f"No hay existencias suficientes de "
+                    f"{item['nombre']}."
+                )
+                
+                # DESCONTAR INVENTARIO
+                for item in productos:
+
+                    cantidad = Decimal(
+                        str(item['cantidad'])
+                    )
+
+                    actualizado = Producto.objects.filter(
+                        pk=item['id'],
+                        activo=True,
+                        existencias__gte=cantidad
+                    ).update(
+                        existencias=F('existencias') - cantidad
+                    )
+
+                    if actualizado != 1:
+                        raise ValueError(
+                            'Existencias insuficientes de '
+                            + item['nombre']
+                        )
 
                 venta = Venta.objects.create(
                     cliente_nombre=nombre,
