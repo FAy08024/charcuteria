@@ -11,8 +11,11 @@ from django.db.models import F
 from django.shortcuts import render, redirect
 from django.utils import timezone
 
+from productos.models import Producto
+from clientes.models import Cliente
 
 from clientes.views import CLIENTES_DEMO
+
 from productos.models import Producto
 from usuarios.models import TurnoEmpleado
 from .models import Venta, DetalleVenta
@@ -132,6 +135,7 @@ FACTURAS_DEMO = [
 # VISTA DE FACTURAS
 # ==========================================
 
+
 @login_required(login_url='login')
 def facturas_demo(request):
 
@@ -140,26 +144,51 @@ def facturas_demo(request):
             'No tienes permiso para consultar facturas.'
         )
 
-    clientes_por_id = {
-        cliente['id']: cliente
-        for cliente in CLIENTES_DEMO
-    }
+    clientes = Cliente.objects.all().order_by('nombre')
 
-    facturas = [
+    ventas = Venta.objects.filter(
+        fecha__date=timezone.localdate()
+    ).select_related(
+        'cliente'
+    ).prefetch_related(
+        'detalles'
+    ).order_by('-fecha')
+
+    facturas = []
+
+    for venta in ventas:
+
+        detalles = [
+            {
+                'nombre': detalle.producto_nombre,
+                'cantidad': detalle.cantidad,
+            }
+            for detalle in venta.detalles.all()
+        ]
+
+        facturas.append({
+            'cliente_id': venta.cliente_id or '',
+            'numero': venta.numero,
+            'cliente': venta.cliente_nombre,
+            'hora': timezone.localtime(
+                venta.fecha
+            ).strftime('%H:%M'),
+            'tipo': venta.tipo,
+            'estado': venta.estado,
+            'total': formato_venta(venta.total),
+            'productos': detalles,
+        })
+
+    return render(
+        request,
+        'ventas/facturas_demo.html',
         {
-            **factura,
-            'cliente': clientes_por_id[
-                factura['cliente_id']
-            ]['nombre']
+            'clientes': clientes,
+            'facturas': facturas,
+            'fecha_hoy': timezone.localdate(),
         }
-        for factura in FACTURAS_DEMO
-    ]
+    )
 
-    return render(request, 'ventas/facturas_demo.html', {
-        'clientes': CLIENTES_DEMO,
-        'facturas': facturas,
-        'fecha_hoy': timezone.localdate(),
-    })
 
 
 # ==========================================
@@ -611,6 +640,8 @@ def nueva_venta(request):
                 )
 
             # CLIENTE
+
+            # CLIENTE REAL DE SQLITE
             cliente_id = request.POST.get(
                 'cliente_id', ''
             ).strip()
@@ -621,36 +652,42 @@ def nueva_venta(request):
 
                 if not cliente_id.isdecimal():
                     raise ValueError(
-                        'Cliente inválido.'
+                        'Identificador de cliente inválido.'
                     )
 
-                cliente_registrado = next(
-                    (
-                        cliente
-                        for cliente in CLIENTES_DEMO
-                        if cliente['id'] == int(cliente_id)
-                    ),
-                    None
-                )
+                cliente_registrado = Cliente.objects.filter(
+                    pk=int(cliente_id)
+                ).first()
 
                 if cliente_registrado is None:
                     raise ValueError(
-                        'El cliente no existe.'
+                        'El cliente seleccionado no existe.'
                     )
 
-            # CRÉDITO SOLO PARA CLIENTES REGISTRADOS
-            if (
-                tipo == 'Crédito' and
-                cliente_registrado is None
-            ):
-                raise ValueError(
-                    'Selecciona un cliente registrado para crédito.'
-                )
+                if cliente_registrado.estado != 'ACTIVO':
+                    raise ValueError(
+                        'El cliente está bloqueado o inactivo.'
+                    )
 
+            # AUTORIZACIÓN DEL CRÉDITO
+            if tipo == 'Crédito':
+
+                if cliente_registrado is None:
+                    raise ValueError(
+                        'Selecciona un cliente registrado.'
+                    )
+
+                if cliente_registrado.tipo != 'MAYORISTA':
+                    raise ValueError(
+                        'El crédito es exclusivo '
+                        'para clientes mayoristas.'
+                    )
+
+            # DATOS HISTÓRICOS
             if cliente_registrado:
 
-                nombre = cliente_registrado['nombre']
-                codigo = cliente_registrado['codigo']
+                nombre = cliente_registrado.nombre
+                codigo = cliente_registrado.codigo
 
             else:
 
@@ -667,6 +704,8 @@ def nueva_venta(request):
                 raise ValueError(
                     'Nombre del cliente demasiado largo.'
                 )
+
+
 
             # MÉTODO DE PAGO
             if tipo == 'Crédito':
@@ -695,9 +734,10 @@ def nueva_venta(request):
             # GUARDAR VENTA EN SQLITE
             # ==========================================
 
+            
             with transaction.atomic():
-                 
-                # DESCONTAR EXISTENCIAS DE PRODUCTOS VENDIDOS
+
+            # DESCONTAR INVENTARIO UNA SOLA VEZ
                 for item in productos:
 
                     cantidad = Decimal(str(item['cantidad']))
@@ -705,10 +745,22 @@ def nueva_venta(request):
                     actualizado = Producto.objects.filter(
                         pk=item['id'],
                         activo=True,
-                    existencias__gte=cantidad
+                        existencias__gte=cantidad
                     ).update(
-                    existencias=F('existencias') - cantidad
+                        existencias=F('existencias') - cantidad
                     )
+
+                    if actualizado != 1:
+                        raise ValueError(
+                            'Existencias insuficientes de '
+                            + item['nombre']
+                        )
+
+                venta = Venta.objects.create(
+                # Conserva aquí los campos originales
+                # de tu venta, sin reemplazarlos.
+                )
+
 
                 if actualizado != 1:
                     raise ValueError(

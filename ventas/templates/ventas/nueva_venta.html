@@ -136,11 +136,28 @@
                             Cliente ocasional
                         </option>
 
+                        
+                        
                         {% for cliente in clientes %}
-                            <option value="{{ cliente.id }}">
-                                {{ cliente.nombre }} · {{ cliente.codigo }}
-                            </option>
+
+                        <option
+                            value="{{ cliente.pk }}"
+                            data-tipo="{{ cliente.tipo }}"
+                            data-estado="{{ cliente.estado }}"
+
+                            {% if cliente.estado != 'ACTIVO' %}
+                                disabled
+                            {% endif %}>
+
+                            {{ cliente.nombre }}
+                            · {{ cliente.documento }}
+                            ({{ cliente.get_tipo_display }})
+
+                        </option>
+
                         {% endfor %}
+
+
 
                     </select>
 
@@ -193,10 +210,11 @@
                     </div>
 
                     <p class="nv-nota" id="nvAvisoCredito" hidden>
-                        Para una venta a crédito debes seleccionar
-                        un cliente registrado. La operación quedará
-                        pendiente, pero todavía no generará una
-                        deuda automáticamente.
+                        El crédito está disponible únicamente para
+                        clientes mayoristas activos.
+                        La venta quedará pendiente de pago.
+                        La generación automática de la deuda
+                        todavía está en desarrollo.
                     </p>
 
                     <!-- PRODUCTOS DEL CARRITO -->
@@ -491,12 +509,29 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        if (tipo.value === 'Crédito' && cliente.value === '') {
+        
+        if (tipo.value === 'Crédito') {
 
+        const seleccionado = cliente.selectedOptions[0];
+
+        const autorizado = (
+            cliente.value !== '' &&
+            seleccionado?.dataset.tipo === 'MAYORISTA' &&
+            seleccionado?.dataset.estado === 'ACTIVO'
+        );
+
+        if (!autorizado) {
             evento.preventDefault();
-            alert('Selecciona un cliente registrado.');
-            return;
-        }
+
+        alert(
+            'Solo los clientes mayoristas activos ' +
+            'pueden comprar a crédito.'
+        );
+
+        return;
+    }
+}
+
 
         guardar.disabled = true;
         guardar.textContent = 'Guardando venta...';

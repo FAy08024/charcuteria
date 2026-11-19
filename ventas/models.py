@@ -12,7 +12,13 @@ class Venta(models.Model):
         ('Pagada', 'Pagada'),
         ('Pendiente', 'Pendiente'),
     ]
-
+    cliente = models.ForeignKey(
+    'clientes.Cliente',
+    on_delete=models.PROTECT,
+    related_name='ventas',
+    null=True,
+    blank=True
+    )
     cliente_nombre = models.CharField(max_length=120, default='Cliente ocasional')
     cliente_codigo = models.CharField(max_length=30, default='Sin registro')
     tipo = models.CharField(max_length=10, choices=TIPOS)

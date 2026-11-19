@@ -10995,3 +10995,54 @@ dialog.te-modal[open] {
         flex: 1;
     }
 }
+
+/* CARLOTA - FORMULARIO DE CLIENTES */
+
+.cl-formulario {
+    display: grid;
+    gap: 18px;
+    max-width: 650px;
+    margin-top: 25px;
+}
+
+.cl-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cl-campo label {
+    font-weight: 600;
+    color: #194b3c;
+}
+
+.cl-campo input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d5dfda;
+    border-radius: 9px;
+    font: inherit;
+}
+
+.cl-campo input:focus {
+    outline: 2px solid #b99a36;
+    outline-offset: 1px;
+}
+
+.cl-formulario button {
+    cursor: pointer;
+    border: none;
+}
+
+.cl-error {
+    color: #b42318;
+    font-size: 13px;
+}
+.cl-campo select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d5dfda;
+    border-radius: 9px;
+    font: inherit;
+    background: white;
+}

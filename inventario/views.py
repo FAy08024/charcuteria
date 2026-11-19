@@ -1,4 +1,3 @@
-
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -11,11 +10,18 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import IncidenciaInventarioForm
-from .models import AjusteExistencia, IncidenciaInventario
+from .models import (
+    AjusteExistencia,
+    IncidenciaInventario,
+    EntradaMercancia,
+)
 
 from decimal import Decimal, InvalidOperation
 from productos.models import Producto
 from .models import EntradaMercancia
+
+
+
 # PRODUCTOS FICTICIOS DEL INVENTARIO
 PRODUCTOS_INVENTARIO_DEMO = [
     {
@@ -127,34 +133,33 @@ def es_empleado_inventario(usuario):
 # ==========================================
 
 
+
 def obtener_productos_inventario():
 
-    productos = []
-
-    consulta = Producto.objects.filter(
+    productos = Producto.objects.filter(
         activo=True
     ).order_by('nombre')
 
-    for p in consulta:
+    resultado = []
+
+    for p in productos:
 
         stock = p.existencias
         minimo = p.stock_minimo
 
         if stock == 0:
             estado = 'agotado'
-            estado_texto = 'Agotado'
-
+            texto = 'Agotado'
         elif stock <= minimo:
             estado = 'bajo'
-            estado_texto = 'Stock bajo'
-
+            texto = 'Stock bajo'
         else:
             estado = 'disponible'
-            estado_texto = 'Disponible'
+            texto = 'Disponible'
 
         ultima = p.entradas.order_by('-fecha').first()
 
-        productos.append({
+        resultado.append({
             'id': p.pk,
             'codigo': p.codigo,
             'nombre': p.nombre,
@@ -168,14 +173,15 @@ def obtener_productos_inventario():
                 timezone.localtime(
                     ultima.fecha
                 ).strftime('%d/%m/%Y')
-                if ultima else 'Sin registros'
+                if ultima else 'Sin entradas'
             ),
-            'descripcion': p.descripcion or '',
+            'descripcion': p.descripcion,
             'estado': estado,
-            'estado_texto': estado_texto,
+            'estado_texto': texto,
         })
 
-    return productos
+    return resultado
+
 
 
 
@@ -322,6 +328,9 @@ def incidencias_admin(request):
 
 @login_required(login_url='login')
 @require_POST
+
+@login_required(login_url='login')
+@require_POST
 def resolver_incidencia(request, incidencia_id):
 
     if not es_administrador_inventario(request.user):
@@ -330,7 +339,6 @@ def resolver_incidencia(request, incidencia_id):
         )
 
     accion = request.POST.get('accion', '').strip()
-
     respuesta = request.POST.get(
         'respuesta', ''
     ).strip()[:700]
@@ -340,136 +348,146 @@ def resolver_incidencia(request, incidencia_id):
     ).strip()
 
     if accion not in [
-        'revision',
-        'baja',
-        'reemplazar',
-        'descartar'
+        'revision', 'baja', 'reemplazar', 'descartar'
     ]:
-
-        messages.error(
-            request,
-            'Selecciona una acción válida.'
-        )
-
+        messages.error(request, 'Acción inválida.')
         return redirect('inventario_incidencias')
 
     if accion == 'descartar' and not respuesta:
-
         messages.error(
             request,
             'Explica por qué se descarta el reporte.'
         )
-
         return redirect('inventario_incidencias')
 
-    with transaction.atomic():
+    try:
+        with transaction.atomic():
 
-        incidencia = get_object_or_404(
-            IncidenciaInventario.objects.select_for_update(),
-            pk=incidencia_id
-        )
-
-        if incidencia.estado in ['resuelta', 'descartada']:
-
-            messages.error(
-                request,
-                'Esta incidencia ya fue cerrada.'
+            incidencia = get_object_or_404(
+                IncidenciaInventario.objects.select_for_update(),
+                pk=incidencia_id
             )
 
-            return redirect('inventario_incidencias')
-
-        if accion == 'revision':
-
-            incidencia.estado = 'revision'
-            incidencia.respuesta = respuesta
-
-            incidencia.save(
-                update_fields=['estado', 'respuesta']
-            )
-
-            messages.success(
-                request,
-                'La incidencia quedó en revisión.'
-            )
-
-            return redirect('inventario_incidencias')
-
-        
-        if accion in ['baja', 'reemplazar']:
-
-            cantidad = Decimal(incidencia.cantidad)
-
-            original = Producto.objects.filter(
-                codigo=incidencia.producto_codigo,
-                activo=True
-            ).first()
-
-            if original is None:
-                messages.error(
-                    request,
-                    'El producto original no existe.'
+            if incidencia.estado not in [
+                'pendiente', 'revision'
+            ]:
+                raise ValueError(
+                    'Esta incidencia ya fue cerrada.'
                 )
-                return redirect('inventario_incidencias')
 
-            reemplazo = None
+            if accion == 'revision':
+                incidencia.estado = 'revision'
+                incidencia.respuesta = respuesta
 
-            if accion == 'reemplazar':
-                reemplazo = Producto.objects.filter(
-                    codigo=codigo_reemplazo,
-                    activo=True
-                ).first()
+                incidencia.save(
+                    update_fields=['estado', 'respuesta']
+                )
 
-                if reemplazo is None:
-                    messages.error(
-                        request,
-                        'El producto de reemplazo no existe.'
+            else:
+                nuevo_estado = (
+                    'descartada'
+                    if accion == 'descartar'
+                    else 'resuelta'
+                )
+
+                # Impedir procesar dos veces la incidencia
+                actualizado = IncidenciaInventario.objects.filter(
+                    pk=incidencia.pk,
+                    estado__in=['pendiente', 'revision']
+                ).update(estado=nuevo_estado)
+
+                if actualizado != 1:
+                    raise ValueError(
+                        'La incidencia ya fue procesada.'
                     )
-                    return redirect('inventario_incidencias')
 
-            # Retirar mercancía afectada
-            actualizado = Producto.objects.filter(
-                pk=original.pk,
-                existencias__gte=cantidad
-            ).update(
-                existencias=F('existencias') - cantidad
-            )
+                if accion in ['baja', 'reemplazar']:
 
-            if actualizado != 1:
-                messages.error(
-                    request,
-                    'No hay existencias suficientes.'
+                    cantidad = Decimal(
+                        str(incidencia.cantidad)
+                    )
+
+                    original = Producto.objects.filter(
+                        codigo=incidencia.producto_codigo,
+                        activo=True
+                    ).first()
+
+                    if original is None:
+                        raise ValueError(
+                            'El producto reportado no existe '
+                            'en el inventario real.'
+                        )
+
+                    reemplazo = None
+
+                    if accion == 'reemplazar':
+
+                        reemplazo = Producto.objects.filter(
+                            codigo=codigo_reemplazo,
+                            activo=True
+                        ).first()
+
+                        if reemplazo is None:
+                            raise ValueError(
+                                'Selecciona un producto '
+                                'de reemplazo válido.'
+                            )
+
+                    # RETIRAR EXISTENCIAS AFECTADAS
+                    actualizado = Producto.objects.filter(
+                        pk=original.pk,
+                        existencias__gte=cantidad
+                    ).update(
+                        existencias=F('existencias') - cantidad
+                    )
+
+                    if actualizado != 1:
+                        raise ValueError(
+                            'No hay existencias suficientes '
+                            'para retirar la mercancía.'
+                        )
+
+                    # AGREGAR REEMPLAZO RECIBIDO
+                    if reemplazo is not None:
+
+                        limite = Decimal('999999999.999')
+
+                        actualizado = Producto.objects.filter(
+                            pk=reemplazo.pk,
+                            existencias__lte=limite - cantidad
+                        ).update(
+                            existencias=F('existencias') + cantidad
+                        )
+
+                        if actualizado != 1:
+                            raise ValueError(
+                                'No se pudo registrar el reemplazo.'
+                            )
+
+                        EntradaMercancia.objects.create(
+                            producto=reemplazo,
+                            usuario=request.user,
+                            cantidad=cantidad
+                        )
+
+                incidencia.estado = nuevo_estado
+                incidencia.accion = accion
+
+                incidencia.codigo_reemplazo = (
+                    codigo_reemplazo
+                    if accion == 'reemplazar'
+                    else ''
                 )
-                return redirect('inventario_incidencias')
 
-            # Registrar mercancía sana recibida
-            if reemplazo is not None:
-                Producto.objects.filter(
-                    pk=reemplazo.pk
-                ).update(
-                    existencias=F('existencias') + cantidad
-                )
+                incidencia.respuesta = respuesta
+                incidencia.resuelto_por = request.user
+                incidencia.fecha_resolucion = timezone.now()
 
+                incidencia.save()
 
-        # CERRAR EL REPORTE
-        incidencia.estado = (
-            'descartada'
-            if accion == 'descartar'
-            else 'resuelta'
-        )
-
-        incidencia.accion = accion
-
-        incidencia.codigo_reemplazo = (
-            codigo_reemplazo
-            if accion == 'reemplazar'
-            else ''
-        )
-
-        incidencia.respuesta = respuesta
-        incidencia.resuelto_por = request.user
-        incidencia.fecha_resolucion = timezone.now()
-
-        incidencia.save()
+    except ValueError as error:
+        messages.error(request, str(error))
+        return redirect('inventario_incidencias')
 
     messages.success(
         request,
@@ -500,7 +518,7 @@ def inventario_demo(request):
 
     resumen = {
         'total_productos': len(productos),
-        'total_unidades': sum( 1 for p in productos if p['stock'] > 0),
+        'total_unidades': sum(1 for p in productos if p['stock'] > 0),
         'stock_bajo': sum(
             1 for p in productos if p['estado'] == 'bajo'
         ),
@@ -584,6 +602,82 @@ def registrar_entrada(request):
         request,
         f'Entrada registrada: {cantidad} '
         f'{producto.unidad_medida} de {producto.nombre}.'
+    )
+
+    return redirect('inventario_demo')
+
+@login_required(login_url='login')
+@require_POST
+def registrar_entrada(request):
+
+    if not es_administrador_inventario(request.user):
+        raise PermissionDenied(
+            'Solo el administrador puede registrar entradas.'
+        )
+
+    codigo = request.POST.get(
+        'producto_codigo', ''
+    ).strip()
+
+    try:
+        cantidad = Decimal(
+            request.POST.get('cantidad', '')
+        )
+
+        if (
+            not cantidad.is_finite()
+            or cantidad <= 0
+            or cantidad > Decimal('999999999.999')
+            or cantidad != cantidad.quantize(
+                Decimal('0.001')
+            )
+        ):
+            raise ValueError()
+
+    except (InvalidOperation, ValueError):
+        messages.error(
+            request,
+            'Ingresa una cantidad válida, '
+            'con máximo tres decimales.'
+        )
+        return redirect('inventario_demo')
+
+    producto = get_object_or_404(
+        Producto,
+        codigo=codigo,
+        activo=True
+    )
+
+    try:
+        with transaction.atomic():
+
+            limite = Decimal('999999999.999')
+
+            actualizado = Producto.objects.filter(
+                pk=producto.pk,
+                existencias__lte=limite - cantidad
+            ).update(
+                existencias=F('existencias') + cantidad
+            )
+
+            if actualizado != 1:
+                raise ValueError(
+                    'La cantidad supera el límite de existencias.'
+                )
+
+            EntradaMercancia.objects.create(
+                producto=producto,
+                usuario=request.user,
+                cantidad=cantidad
+            )
+
+    except ValueError as error:
+        messages.error(request, str(error))
+        return redirect('inventario_demo')
+
+    messages.success(
+        request,
+        'Entrada registrada correctamente.'
     )
 
     return redirect('inventario_demo')

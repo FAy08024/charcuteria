@@ -54,3 +54,23 @@ class Cliente(models.Model):
     class Meta:
         verbose_name = "Cliente"
         verbose_name_plural = "Clientes"
+
+    @property
+    def codigo(self):
+        if self.pk is None:
+            return 'CLI-NUEVO'
+        return f'CLI-{self.pk:03d}'
+
+    @property
+    def iniciales(self):
+        partes = self.nombre.strip().split()
+        return ''.join(
+            palabra[0] for palabra in partes[:2]
+        ).upper() or 'CL'
+
+    @property
+    def fecha(self):
+        from django.utils import timezone
+        return timezone.localtime(
+            self.fecha_registro
+        ).strftime('%d/%m/%Y')

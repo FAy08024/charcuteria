@@ -89,6 +89,80 @@
                     </div>
 
                 </div>
+                
+<!-- ADMINISTRACIÓN DEL CLIENTE -->
+
+<div class="cliente-ficha-datos">
+
+    <div class="cliente-dato">
+        <span>Datos personales</span>
+
+        <a href="{% url 'editar_cliente' cliente.pk %}">
+            Editar información
+        </a>
+    </div>
+
+</div>
+
+{% if es_administrador %}
+
+    <h2>Administrar clasificación</h2>
+
+    <form method="POST"
+          action="{% url 'cambiar_tipo_estado' cliente.pk %}"
+          class="cl-formulario">
+
+        {% csrf_token %}
+
+        <div class="cl-campo">
+            <label for="clTipo">Tipo de cliente</label>
+
+            <select id="clTipo" name="tipo">
+
+                <option value="MINORISTA"
+                    {% if cliente.tipo == 'MINORISTA' %}selected{% endif %}>
+                    Minorista
+                </option>
+
+                <option value="MAYORISTA"
+                    {% if cliente.tipo == 'MAYORISTA' %}selected{% endif %}>
+                    Mayorista
+                </option>
+
+            </select>
+        </div>
+
+        <div class="cl-campo">
+            <label for="clEstado">Estado</label>
+
+            <select id="clEstado" name="estado">
+
+                <option value="ACTIVO"
+                    {% if cliente.estado == 'ACTIVO' %}selected{% endif %}>
+                    Activo
+                </option>
+
+                <option value="BLOQUEADO"
+                    {% if cliente.estado == 'BLOQUEADO' %}selected{% endif %}>
+                    Bloqueado
+                </option>
+
+                <option value="INACTIVO"
+                    {% if cliente.estado == 'INACTIVO' %}selected{% endif %}>
+                    Inactivo
+                </option>
+
+            </select>
+        </div>
+
+        <button type="submit"
+                class="cliente-boton-regresar">
+            Guardar clasificación
+        </button>
+
+    </form>
+
+{% endif %}
 
                 <!-- RESUMEN FINANCIERO -->
                 {% if resumen_cuenta %}

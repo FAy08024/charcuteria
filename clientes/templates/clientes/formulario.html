@@ -1,0 +1,69 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} | CARLOTA{% endblock %}
+
+{% block content %}
+
+<section class="clientes-pagina">
+    <div class="clientes-contenedor">
+
+        <div class="clientes-navegacion">
+            <a href="{% url 'clientes_demo' %}">
+                ← Volver a clientes
+            </a>
+        </div>
+
+        <div class="cliente-ficha">
+
+            <div class="cliente-ficha-portada">
+                <span>✦ CHARCUTERÍA ✦</span>
+            </div>
+
+            <div class="cliente-ficha-cuerpo">
+
+                <h1>{{ titulo }}</h1>
+
+                <p>
+                    Registra o actualiza la información
+                    del cliente.
+                </p>
+
+                <form method="POST"
+                      class="cl-formulario">
+
+                    {% csrf_token %}
+
+                    {% for campo in formulario %}
+
+                        <div class="cl-campo">
+                            <label for="{{ campo.id_for_label }}">
+                                {{ campo.label }}
+                            </label>
+
+                            {{ campo }}
+
+                            {% for error in campo.errors %}
+                                <p class="cl-error">
+                                    {{ error }}
+                                </p>
+                            {% endfor %}
+                        </div>
+
+                    {% endfor %}
+
+                    <button type="submit"
+                            class="cliente-boton-regresar">
+                        {{ boton }}
+                    </button>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}

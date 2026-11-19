@@ -41,7 +41,12 @@
                 DATOS DE DEMOSTRACIÓN
             </span>
         </div>
-
+        <div class="clientes-navegacion">
+            <a href="{% url 'crear_cliente' %}"
+            class="cliente-boton-regresar">
+             + Registrar cliente
+             </a>
+        </div>
         <!-- LISTADO -->
         <div class="clientes-tarjeta-principal">
 
@@ -108,7 +113,7 @@
 
                     <!-- TIPO -->
                     <div>
-                        <span class="cliente-tipo {% if cliente.tipo == 'Mayorista' %}tipo-mayorista{% else %}tipo-minorista{% endif %}">
+                        <span class="cliente-tipo {% if cliente.tipo == 'MAYORISTA' %}tipo-mayorista{% else %}tipo-minorista{% endif %}">
                             {{ cliente.tipo }}
                         </span>
                     </div>
@@ -120,8 +125,8 @@
 
                     <!-- ESTADO -->
                     <div>
-                        <span class="cliente-estado {% if cliente.estado == 'Activo' %}estado-activo{% else %}estado-inactivo{% endif %}">
-                            {{ cliente.estado }}
+                        <span class="cliente-estado {% if cliente.estado == 'ACTIVO' %}estado-activo{% else %}estado-inactivo{% endif %}">
+                            {{ cliente.get_estado_display }}
                         </span>
                     </div>
 
@@ -147,7 +152,7 @@
 
                         <strong>{{ cliente.nombre }}</strong>
 
-                        <span>{{ cliente.tipo }}</span>
+                        <span>{{ cliente.get_tipo_display }}</span>
 
                         <p>
                             Registrado el {{ cliente.fecha }}
