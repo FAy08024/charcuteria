@@ -144,40 +144,69 @@ def facturas_demo(request):
             'No tienes permiso para consultar facturas.'
         )
 
-    clientes = Cliente.objects.all().order_by('nombre')
+    clientes = list(
+        Cliente.objects.all().order_by('nombre')
+    )
 
-    ventas = Venta.objects.filter(
-        fecha__date=timezone.localdate()
+    # Relacionar clientes mediante códigos y documentos
+    clientes_por_codigo = {
+        cliente.codigo: cliente
+        for cliente in clientes
+    }
+
+    clientes_por_documento = {
+        cliente.documento: cliente
+        for cliente in clientes
+    }
+
+    # Consultar todas las ventas reales
+    ventas = Venta.objects.select_related(
+        'cliente', 'empleado'
     ).prefetch_related(
         'detalles'
     ).order_by('-fecha')
-
-    clientes_por_documento = {
-        cliente.documento: cliente.pk
-        for cliente in clientes
-    }
 
     facturas = []
 
     for venta in ventas:
 
+        cliente = venta.cliente
+
+        # Compatibilidad con registros anteriores
+        if cliente is None:
+            candidato = (
+                clientes_por_codigo.get(venta.cliente_codigo)
+                or clientes_por_documento.get(venta.cliente_codigo)
+            )
+
+            if (
+                candidato is not None
+                and candidato.nombre.strip().casefold()
+                == venta.cliente_nombre.strip().casefold()
+            ):
+                cliente = candidato
+
         detalles = [
             {
                 'nombre': detalle.producto_nombre,
                 'cantidad': detalle.cantidad,
+                'precio': formato_venta(detalle.precio_unitario),
+                'importe': formato_venta(detalle.importe),
             }
             for detalle in venta.detalles.all()
         ]
 
+        fecha = timezone.localtime(venta.fecha)
+
         facturas.append({
-            'cliente_id': clientes_por_documento.get(venta.cliente_codigo, ''),
+            'cliente_id': cliente.pk if cliente else '',
             'numero': venta.numero,
             'cliente': venta.cliente_nombre,
-            'hora': timezone.localtime(
-                venta.fecha
-            ).strftime('%H:%M'),
+            'fecha': fecha.strftime('%d/%m/%Y'),
+            'hora': fecha.strftime('%H:%M'),
             'tipo': venta.tipo,
             'estado': venta.estado,
+            'metodo_pago': venta.metodo_pago,
             'total': formato_venta(venta.total),
             'productos': detalles,
         })

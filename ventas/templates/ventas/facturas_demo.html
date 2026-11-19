@@ -78,12 +78,15 @@
 
                     <div class="fac-avatar">
 
-                        {% if cliente.foto %}
-                            <img src="{% static cliente.foto %}"
-                                 alt="Foto de {{ cliente.nombre }}">
-                        {% else %}
-                            <span>{{ cliente.iniciales }}</span>
-                        {% endif %}
+                        <div class="fac-avatar">
+                            {% if cliente.foto %}
+                                <img src="{{ cliente.foto.url }}"
+                                alt="{{ cliente.nombre }}"
+                                loading="lazy">
+                            {% else %}
+                            <span>{{ cliente.nombre|slice:":1"|upper }}</span>
+                            {% endif %}
+                        </div>
 
                     </div>
 
@@ -205,17 +208,21 @@
 
                                     {% for producto in factura.productos %}
 
-                                    <div class="fac-producto">
-                                        <span>{{ producto.nombre }}</span>
-                                        <strong>
-                                            Cantidad: {{ producto.cantidad }}
-                                        </strong>
-                                    </div>
+                                        <div class="fac-producto">
+                                            <span>
+                                            {{ producto.nombre }}
+                                            <small>
+                                            {{ producto.cantidad }} × {{ producto.precio }}
+                                            </small>
+                                            </span>
+
+                                        <strong>{{ producto.importe }}</strong>
+                                </div>
 
                                     {% endfor %}
 
                                 </div>
-
+                                
                                 <div class="fac-detalle-total">
 
                                     <span>Total de la factura</span>
@@ -226,9 +233,8 @@
 
                                 </div>
 
-                                <p class="fac-detalle-nota">
-                                    Factura ficticia para probar
-                                    el diseño del sistema.
+                               <p class="fac-detalle-nota">
+                                    Comprobante generado a partir de una venta registrada.
                                 </p>
 
                             </div>
