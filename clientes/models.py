@@ -67,7 +67,11 @@ class Cliente(models.Model):
         return ''.join(
             palabra[0] for palabra in partes[:2]
         ).upper() or 'CL'
-
+    foto = models.ImageField(
+        upload_to='clientes/',
+        blank=True,
+        verbose_name='Foto del cliente'
+    )   
     @property
     def fecha(self):
         from django.utils import timezone

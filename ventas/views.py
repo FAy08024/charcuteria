@@ -14,7 +14,7 @@ from django.utils import timezone
 from productos.models import Producto
 from clientes.models import Cliente
 
-from clientes.views import CLIENTES_DEMO
+from clientes.models import Cliente
 
 from productos.models import Producto
 from usuarios.models import TurnoEmpleado
@@ -831,12 +831,12 @@ def nueva_venta(request):
             error = str(error_venta)
 
     return render(
-        request,
-        'ventas/nueva_venta.html',
-        {
-            'catalogo': catalogo,
-            'clientes': CLIENTES_DEMO,
-            'error': error,
-            'ventas_recientes': Venta.objects.all()[:5],
-        }
-    )
+    request,
+    'ventas/nueva_venta.html',
+    {
+        'catalogo': catalogo,
+        'clientes': list(Cliente.objects.values()),
+        'error': error,
+        'ventas_recientes': Venta.objects.all()[:5],
+    }
+)

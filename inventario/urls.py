@@ -39,4 +39,9 @@ urlpatterns = [
     views.registrar_entrada,
     name='registrar_entrada'
     ),
+    path(
+    'entradas/registrar/',
+    views.registrar_entrada,
+    name='registrar_entrada'
+),
 ]

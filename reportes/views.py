@@ -2,7 +2,8 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from clientes.views import CLIENTES_DEMO
+from clientes.models import Cliente
+from clientes.models import Cliente
 
 from ventas.models import Venta
 from cuentas.models import Abono
@@ -179,14 +180,12 @@ def historial_demo(request):
         )
 
     # CLIENTES QUE YA TENEMOS
-    clientes = [
-        cliente.copy()
-        for cliente in CLIENTES_DEMO
-    ]
+   # CLIENTES REGISTRADOS EN LA BASE DE DATOS
+    clientes = list(Cliente.objects.values())
 
     clientes_por_codigo = {
         cliente['codigo']: cliente['id']
-        for cliente in CLIENTES_DEMO
+        for cliente in clientes
     }
 
     # MOVIMIENTOS FICTICIOS EXISTENTES

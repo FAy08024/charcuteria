@@ -97,12 +97,12 @@
 
                         <div class="cliente-avatar">
                             {% if cliente.foto %}
-                                <img src="{% static cliente.foto %}"
-                                     alt="Foto de {{ cliente.nombre }}">
+                                    <img src="{{ cliente.foto.url }}"
+                                    alt="{{ cliente.nombre }}">
                             {% else %}
                                 {{ cliente.iniciales }}
                             {% endif %}
-                        </div>
+                            </div>
 
                         <div class="cliente-nombre">
                             <strong>{{ cliente.nombre }}</strong>

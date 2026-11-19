@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.http import Http404
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from clientes.views import CLIENTES_DEMO
+from clientes.models import Cliente
 
 from django.contrib import messages
 from django.db import transaction
@@ -61,12 +61,14 @@ def formato_pesos(valor):
 
 def obtener_cuentas_demo():
 
+    clientes_db = list(Cliente.objects.values())
+
     clientes_por_id = {
-        c['id']: c for c in CLIENTES_DEMO
+        c['id']: c for c in clientes_db
     }
 
     clientes_por_codigo = {
-        c['codigo']: c for c in CLIENTES_DEMO
+        c['codigo']: c for c in clientes_db
     }
 
     # SUMAR LOS ABONOS GUARDADOS EN SQLITE
@@ -188,7 +190,7 @@ def obtener_cuentas_demo():
         fecha = timezone.localtime(venta.fecha)
 
         cuentas.append({
-            'cliente_id': cliente['id'],
+            'cliente_id': cliente.pk,
             'cliente': cliente,
             'numero': venta.numero,
             'capital': venta.total,
@@ -226,11 +228,10 @@ def obtener_cuentas_agrupadas():
     grupos = {}
 
     # INCLUIR LOS 6 CLIENTES REGISTRADOS
-    for cliente in CLIENTES_DEMO:
+    for cliente in Cliente.objects.all():
 
         grupos[cliente['id']] = {
-            'cliente_id': cliente['id'],
-            'cliente': cliente,
+            'cliente_id': cliente.pk,
             'numero': 'Sin créditos',
             'capital': 0,
             'interes': 0,
@@ -498,12 +499,12 @@ def registrar_abono(request):
     # AGRUPAR LAS DEUDAS POR CLIENTE
     clientes_con_deuda = []
 
-    for cliente in CLIENTES_DEMO:
+    for cliente in Cliente.objects.all():
 
         creditos = [
             cuenta
             for cuenta in cuentas_pendientes
-            if cuenta['cliente_id'] == cliente['id']
+            if cuenta['cliente_id'] == cliente.pk
         ]
 
         if creditos:
